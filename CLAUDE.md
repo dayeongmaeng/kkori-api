@@ -7,7 +7,7 @@
 - 1인 개발 (인디 해커)
 
 ## 스택
-- Spring Boot 4.0.5
+- Spring Boot 3.5.14
 - Java 21
 - PostgreSQL 16
 - JPA + Hibernate
