@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew *)",
+      "Bash(git *)",
+      "Bash(docker *)",
+      "Read(**)",
+      "Write(**)",
+      "Edit(**)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo *)"
+    ]
+  },
+  "context": {
+    "include": [
+      "CLAUDE.md",
+      "plan.md",
+      "HANDOFF.md",
+      ".claude/rules/**"
+    ]
+  }
+}
