@@ -43,4 +43,10 @@ public class Caregiver extends BaseEntity {
         this.role = role;
         this.color = color;
     }
+
+    public void update(String name, CaregiverRole role, String color) {
+        this.name = name;
+        this.role = role;
+        this.color = color;
+    }
 }

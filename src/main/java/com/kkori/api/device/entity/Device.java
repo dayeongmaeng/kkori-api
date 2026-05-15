@@ -32,4 +32,8 @@ public class Device extends BaseEntity {
         this.platform = platform;
         this.userId = userId;
     }
+
+    public void update(Platform platform) {
+        this.platform = platform;
+    }
 }

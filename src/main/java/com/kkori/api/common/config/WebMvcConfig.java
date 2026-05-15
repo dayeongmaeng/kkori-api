@@ -16,6 +16,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(deviceIdInterceptor)
                 .addPathPatterns("/api/v1/**")
-                .excludePathPatterns("/api/v1/health");
+                .excludePathPatterns("/api/v1/health", "/api/v1/devices/register");
     }
 }

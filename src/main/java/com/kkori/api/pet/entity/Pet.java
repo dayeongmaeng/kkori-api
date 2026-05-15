@@ -59,4 +59,16 @@ public class Pet extends BaseEntity {
         this.medicalNotes = medicalNotes;
         this.photoBase64 = photoBase64;
     }
+
+    public void update(String name, Species species, String breed, LocalDate birthDate,
+                       BigDecimal weightKg, boolean neutered, String medicalNotes, String photoBase64) {
+        this.name = name;
+        this.species = species;
+        this.breed = breed;
+        this.birthDate = birthDate;
+        this.weightKg = weightKg;
+        this.neutered = neutered;
+        this.medicalNotes = medicalNotes;
+        this.photoBase64 = photoBase64;
+    }
 }

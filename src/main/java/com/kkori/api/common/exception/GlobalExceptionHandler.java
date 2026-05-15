@@ -5,6 +5,7 @@ import com.kkori.api.common.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -30,6 +31,13 @@ public class GlobalExceptionHandler {
 
         ErrorCode code = ErrorCode.VALIDATION_001;
         ErrorResponse error = new ErrorResponse(code.getCode(), code.getMessage(), fields);
+        return ResponseEntity.badRequest().body(ApiResponse.error(error));
+    }
+
+    @ExceptionHandler(ServletRequestBindingException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBinding(ServletRequestBindingException e) {
+        ErrorCode code = ErrorCode.VALIDATION_001;
+        ErrorResponse error = new ErrorResponse(code.getCode(), e.getMessage(), null);
         return ResponseEntity.badRequest().body(ApiResponse.error(error));
     }
 

@@ -30,6 +30,13 @@
   - `common/interceptor/DeviceIdInterceptor` (X-Device-Id 헤더 검증)
   - `common/config/WebMvcConfig` (/api/v1/** 인터셉터 등록)
   - `common/controller/HealthController` (GET /api/v1/health, 인터셉터 제외)
+- **REST API CRUD 구현 (A-4 완료)**
+  - Device: `POST /register`, `GET /me`
+  - Caregiver: CRUD `/api/v1/caregivers`
+  - Pet: CRUD `/api/v1/pets`
+  - DailyPhoto: CRUD `/api/v1/photos`
+  - DailyLog: CRUD `/api/v1/logs`
+  - 각 도메인: Repository, Service, Controller, DTO(request/response) 완성
 
 ### 동작 확인된 것
 - Spring Boot 서버 정상 실행
@@ -41,9 +48,9 @@
 ## 진행 중인 작업
 
 ### 다음 할 일 (우선순위)
-1. A-4: Pet, Caregiver, Device REST API CRUD 구현
-2. A-4: DailyPhoto, DailyLog API 구현
-3. A-5: Postman / HTTP Client로 로컬 테스트
+1. externalId 중복 검증 추가 (POST 요청 시 같은 externalId 재등록 시도 방어)
+2. A-5: Postman / HTTP Client로 로컬 테스트
+3. 사진 저장 구조 구체화 (서버 저장소 결정 후 API 수정)
 
 ---
 
@@ -54,9 +61,10 @@
 
 ### 기술 부채
 - application.yaml 환경 분리 필요 (dev / prod 프로파일)
+- **externalId 중복 검증 미구현**: POST 생성 시 동일 externalId로 재요청하면 DB unique constraint 오류가 500으로 떨어짐. 서비스 레이어에서 `existsByExternalId()` 선처리 또는 `DataIntegrityViolationException` 핸들러 추가 필요
 
 ### 결정 필요
-- 이미지 저장 방식 (현재: base64 TEXT 컬럼, 향후 Phase E에서 S3/R2로 전환)
+- 서버 사진 저장소 구체화 (개발 중에는 base64 로컬, 운영 시 S3/R2 결정 예정)
 - Redis 사용 여부 검토
 
 ---
@@ -71,6 +79,9 @@
 | 2026-05-15 | externalId (UUID String) 별도 관리 | 클라이언트에 내부 PK 노출 방지 |
 | 2026-05-15 | photoBase64 TEXT 컬럼 저장 | Phase A 단순화, Phase E에서 S3 전환 예정 |
 | 2026-05-15 | DailyLog.photoBase64List → @ElementCollection | 다중 사진 지원, 별도 테이블(daily_log_photo) |
+| 2026-05-15 | 사진 저장: 원본은 폰, 서버는 중간(1080)+썸네일(300) | 비용 절감, 카카오톡 모델, 프리미엄 동기 확보 |
+| 2026-05-15 | 리사이즈는 클라이언트에서 수행 | 서버 CPU 절약, 업로드 데이터 감소 |
+| 2026-05-15 | 서버 저장소는 추후 결정 (개발은 로컬 base64) | 우선 API 구조만 확정, Phase E에서 마이그레이션 |
 
 ---
 

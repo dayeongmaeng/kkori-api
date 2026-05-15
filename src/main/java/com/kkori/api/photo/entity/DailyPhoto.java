@@ -51,4 +51,9 @@ public class DailyPhoto extends BaseEntity {
         this.photoBase64 = photoBase64;
         this.caption = caption;
     }
+
+    public void update(String photoBase64, String caption) {
+        this.photoBase64 = photoBase64;
+        this.caption = caption;
+    }
 }

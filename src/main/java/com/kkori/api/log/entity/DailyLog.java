@@ -91,4 +91,22 @@ public class DailyLog extends BaseEntity {
             this.photoBase64List = photoBase64List;
         }
     }
+
+    public void update(MealAmount meal, WaterAmount water, Integer walkMinutes,
+                       StoolCondition pooCondition, UrineColor urineColor,
+                       Integer condition, BigDecimal weightKg, String memo,
+                       List<String> photoBase64List) {
+        this.meal = meal;
+        this.water = water;
+        this.walkMinutes = walkMinutes;
+        this.pooCondition = pooCondition;
+        this.urineColor = urineColor;
+        this.condition = condition;
+        this.weightKg = weightKg;
+        this.memo = memo;
+        if (photoBase64List != null) {
+            this.photoBase64List.clear();
+            this.photoBase64List.addAll(photoBase64List);
+        }
+    }
 }
