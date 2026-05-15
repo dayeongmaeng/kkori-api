@@ -2,7 +2,7 @@
 
 ## Phase A: 로컬 백엔드 구축
 - [x] A-1: Spring Boot 프로젝트 세팅
-- [ ] A-2: 엔티티 + DB 설계
+- [x] A-2: 엔티티 + DB 설계
     - Device, Caregiver, Pet, DailyPhoto, DailyLog
     - JPA Auditing 설정
     - 인덱스 설계 (deviceId, petId+date 등)
