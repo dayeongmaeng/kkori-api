@@ -36,24 +36,19 @@ public class DailyPhoto extends BaseEntity {
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String photoBase64;
-
     private String caption;
 
     @Builder
     public DailyPhoto(String externalId, Long petId, Long caregiverId,
-                      LocalDate date, String photoBase64, String caption) {
+                      LocalDate date, String caption) {
         this.externalId = externalId;
         this.petId = petId;
         this.caregiverId = caregiverId;
         this.date = date;
-        this.photoBase64 = photoBase64;
         this.caption = caption;
     }
 
-    public void update(String photoBase64, String caption) {
-        this.photoBase64 = photoBase64;
+    public void update(String caption) {
         this.caption = caption;
     }
 }

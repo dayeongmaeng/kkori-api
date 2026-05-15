@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,8 +29,14 @@ public class CaregiverService {
         Device device = deviceRepository.findByExternalId(deviceExternalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
 
+        String externalId = resolveExternalId(request.externalId());
+        if (request.externalId() != null && !request.externalId().isBlank()
+                && caregiverRepository.existsByExternalIdAndDeviceId(externalId, device.getId())) {
+            throw new BusinessException(ErrorCode.CAREGIVER_002);
+        }
+
         Caregiver caregiver = Caregiver.builder()
-                .externalId(request.externalId())
+                .externalId(externalId)
                 .deviceId(device.getId())
                 .name(request.name())
                 .role(request.role())
@@ -67,5 +74,11 @@ public class CaregiverService {
         Caregiver caregiver = caregiverRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CAREGIVER_001));
         caregiverRepository.delete(caregiver);
+    }
+
+    private String resolveExternalId(String externalId) {
+        return (externalId == null || externalId.isBlank())
+                ? UUID.randomUUID().toString()
+                : externalId;
     }
 }

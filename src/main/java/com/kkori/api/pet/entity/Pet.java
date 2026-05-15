@@ -22,6 +22,9 @@ public class Pet extends BaseEntity {
     @Column(name = "external_id", nullable = false, unique = true)
     private String externalId;
 
+    @Column(name = "device_id", nullable = false)
+    private Long deviceId;
+
     @Column(nullable = false)
     private String name;
 
@@ -46,10 +49,11 @@ public class Pet extends BaseEntity {
     private String photoBase64;
 
     @Builder
-    public Pet(String externalId, String name, Species species, String breed,
+    public Pet(String externalId, Long deviceId, String name, Species species, String breed,
                LocalDate birthDate, BigDecimal weightKg, boolean neutered,
                String medicalNotes, String photoBase64) {
         this.externalId = externalId;
+        this.deviceId = deviceId;
         this.name = name;
         this.species = species;
         this.breed = breed;

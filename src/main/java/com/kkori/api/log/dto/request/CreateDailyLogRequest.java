@@ -5,10 +5,9 @@ import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 
 public record CreateDailyLogRequest(
-        @NotBlank String externalId,
+        @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$") String externalId,
         @NotBlank String petExternalId,
         @NotBlank String caregiverExternalId,
         @NotNull LocalDate date,
@@ -19,6 +18,5 @@ public record CreateDailyLogRequest(
         UrineColor urineColor,
         @Min(1) @Max(5) Integer condition,
         BigDecimal weightKg,
-        String memo,
-        List<String> photoBase64List
+        String memo
 ) {}

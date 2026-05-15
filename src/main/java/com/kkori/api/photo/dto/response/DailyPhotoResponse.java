@@ -10,7 +10,6 @@ public record DailyPhotoResponse(
         Long petId,
         Long caregiverId,
         LocalDate date,
-        String photoBase64,
         String caption,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -21,7 +20,6 @@ public record DailyPhotoResponse(
                 photo.getPetId(),
                 photo.getCaregiverId(),
                 photo.getDate(),
-                photo.getPhotoBase64(),
                 photo.getCaption(),
                 photo.getCreatedAt(),
                 photo.getUpdatedAt()

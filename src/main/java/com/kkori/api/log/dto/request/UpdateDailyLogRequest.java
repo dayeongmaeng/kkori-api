@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 public record UpdateDailyLogRequest(
         MealAmount meal,
@@ -15,6 +14,5 @@ public record UpdateDailyLogRequest(
         UrineColor urineColor,
         @Min(1) @Max(5) Integer condition,
         BigDecimal weightKg,
-        String memo,
-        List<String> photoBase64List
+        String memo
 ) {}

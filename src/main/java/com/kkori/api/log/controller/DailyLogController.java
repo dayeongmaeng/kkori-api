@@ -22,33 +22,39 @@ public class DailyLogController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<DailyLogResponse>> create(
+            @RequestHeader("X-Device-Id") String deviceId,
             @Valid @RequestBody CreateDailyLogRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(dailyLogService.create(request)));
+                .body(ApiResponse.ok(dailyLogService.create(deviceId, request)));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<DailyLogResponse>>> findByPet(
+            @RequestHeader("X-Device-Id") String deviceId,
             @RequestParam String petExternalId) {
-        return ResponseEntity.ok(ApiResponse.ok(dailyLogService.findByPet(petExternalId)));
+        return ResponseEntity.ok(ApiResponse.ok(dailyLogService.findByPet(deviceId, petExternalId)));
     }
 
     @GetMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyLogResponse>> findOne(
+            @RequestHeader("X-Device-Id") String deviceId,
             @PathVariable String externalId) {
-        return ResponseEntity.ok(ApiResponse.ok(dailyLogService.findByExternalId(externalId)));
+        return ResponseEntity.ok(ApiResponse.ok(dailyLogService.findByExternalId(deviceId, externalId)));
     }
 
     @PutMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyLogResponse>> update(
+            @RequestHeader("X-Device-Id") String deviceId,
             @PathVariable String externalId,
             @Valid @RequestBody UpdateDailyLogRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(dailyLogService.update(externalId, request)));
+        return ResponseEntity.ok(ApiResponse.ok(dailyLogService.update(deviceId, externalId, request)));
     }
 
     @DeleteMapping("/{externalId}")
-    public ResponseEntity<Void> delete(@PathVariable String externalId) {
-        dailyLogService.delete(externalId);
+    public ResponseEntity<Void> delete(
+            @RequestHeader("X-Device-Id") String deviceId,
+            @PathVariable String externalId) {
+        dailyLogService.delete(deviceId, externalId);
         return ResponseEntity.noContent().build();
     }
 }

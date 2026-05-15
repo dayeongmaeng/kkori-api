@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface DailyLogRepository extends JpaRepository<DailyLog, Long> {
     Optional<DailyLog> findByExternalId(String externalId);
+    boolean existsByExternalId(String externalId);
     List<DailyLog> findByPetId(Long petId);
     boolean existsByPetIdAndDate(Long petId, LocalDate date);
 }

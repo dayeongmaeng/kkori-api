@@ -15,12 +15,14 @@
     - DeviceIdInterceptor (X-Device-Id 헤더)
     - WebMvcConfig (인터셉터 등록)
     - HealthController (GET /api/v1/health)
-- [ ] A-4: REST API CRUD
-    - Device API (POST /api/v1/devices)
-    - Caregiver API (CRUD /api/v1/caregivers)
-    - Pet API (CRUD /api/v1/pets)
-    - DailyPhoto API (CRUD /api/v1/photos)
-    - DailyLog API (CRUD /api/v1/logs)
+- [x] A-4: REST API CRUD
+    - Device API (POST /api/v1/devices/register, GET /me)
+    - Caregiver API (CRUD /api/v1/caregivers) — deviceId 격리
+    - Pet API (CRUD /api/v1/pets) — deviceId 격리
+    - DailyPhoto API (CRUD /api/v1/photos) — Pet 소유 디바이스 검증
+    - DailyLog API (CRUD /api/v1/logs) — Pet 소유 디바이스 검증
+    - externalId 서버 자동 생성 (UUID), UUID 형식 검증, 중복 체크
+    - Enum 정리: MealAmount, WaterAmount, StoolCondition, UrineColor
 - [ ] A-5: 로컬 테스트 (Postman / IntelliJ HTTP Client)
 
 ## Phase B: 클라이언트 연동

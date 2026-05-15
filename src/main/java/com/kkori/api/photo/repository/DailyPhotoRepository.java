@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface DailyPhotoRepository extends JpaRepository<DailyPhoto, Long> {
     Optional<DailyPhoto> findByExternalId(String externalId);
+    boolean existsByExternalId(String externalId);
     List<DailyPhoto> findByPetId(Long petId);
     boolean existsByPetIdAndDate(Long petId, LocalDate date);
 }

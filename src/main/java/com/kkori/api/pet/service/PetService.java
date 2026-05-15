@@ -2,6 +2,8 @@ package com.kkori.api.pet.service;
 
 import com.kkori.api.common.exception.BusinessException;
 import com.kkori.api.common.exception.ErrorCode;
+import com.kkori.api.device.entity.Device;
+import com.kkori.api.device.repository.DeviceRepository;
 import com.kkori.api.pet.dto.request.CreatePetRequest;
 import com.kkori.api.pet.dto.request.UpdatePetRequest;
 import com.kkori.api.pet.dto.response.PetResponse;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -19,11 +22,22 @@ import java.util.List;
 public class PetService {
 
     private final PetRepository petRepository;
+    private final DeviceRepository deviceRepository;
 
     @Transactional
-    public PetResponse create(CreatePetRequest request) {
+    public PetResponse create(String deviceExternalId, CreatePetRequest request) {
+        Device device = deviceRepository.findByExternalId(deviceExternalId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
+
+        String externalId = resolveExternalId(request.externalId());
+        if (request.externalId() != null && !request.externalId().isBlank()
+                && petRepository.existsByExternalId(externalId)) {
+            throw new BusinessException(ErrorCode.PET_002);
+        }
+
         Pet pet = Pet.builder()
-                .externalId(request.externalId())
+                .externalId(externalId)
+                .deviceId(device.getId())
                 .name(request.name())
                 .species(request.species())
                 .breed(request.breed())
@@ -36,21 +50,27 @@ public class PetService {
         return PetResponse.from(petRepository.save(pet));
     }
 
-    public List<PetResponse> findAll() {
-        return petRepository.findAll().stream()
+    public List<PetResponse> findAll(String deviceExternalId) {
+        Device device = deviceRepository.findByExternalId(deviceExternalId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
+        return petRepository.findByDeviceId(device.getId()).stream()
                 .map(PetResponse::from)
                 .toList();
     }
 
-    public PetResponse findByExternalId(String externalId) {
-        return petRepository.findByExternalId(externalId)
+    public PetResponse findByExternalId(String deviceExternalId, String externalId) {
+        Device device = deviceRepository.findByExternalId(deviceExternalId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
+        return petRepository.findByExternalIdAndDeviceId(externalId, device.getId())
                 .map(PetResponse::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
     }
 
     @Transactional
-    public PetResponse update(String externalId, UpdatePetRequest request) {
-        Pet pet = petRepository.findByExternalId(externalId)
+    public PetResponse update(String deviceExternalId, String externalId, UpdatePetRequest request) {
+        Device device = deviceRepository.findByExternalId(deviceExternalId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
+        Pet pet = petRepository.findByExternalIdAndDeviceId(externalId, device.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         pet.update(request.name(), request.species(), request.breed(), request.birthDate(),
                 request.weightKg(), request.neutered(), request.medicalNotes(), request.photoBase64());
@@ -58,9 +78,17 @@ public class PetService {
     }
 
     @Transactional
-    public void delete(String externalId) {
-        Pet pet = petRepository.findByExternalId(externalId)
+    public void delete(String deviceExternalId, String externalId) {
+        Device device = deviceRepository.findByExternalId(deviceExternalId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
+        Pet pet = petRepository.findByExternalIdAndDeviceId(externalId, device.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         petRepository.delete(pet);
+    }
+
+    private String resolveExternalId(String externalId) {
+        return (externalId == null || externalId.isBlank())
+                ? UUID.randomUUID().toString()
+                : externalId;
     }
 }

@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -61,20 +59,11 @@ public class DailyLog extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String memo;
 
-    @ElementCollection
-    @CollectionTable(
-            name = "daily_log_photo",
-            joinColumns = @JoinColumn(name = "daily_log_id")
-    )
-    @Column(name = "photo_base64", columnDefinition = "TEXT")
-    private List<String> photoBase64List = new ArrayList<>();
-
     @Builder
     public DailyLog(String externalId, Long petId, Long caregiverId, LocalDate date,
                     MealAmount meal, WaterAmount water, Integer walkMinutes,
                     StoolCondition pooCondition, UrineColor urineColor,
-                    Integer condition, BigDecimal weightKg, String memo,
-                    List<String> photoBase64List) {
+                    Integer condition, BigDecimal weightKg, String memo) {
         this.externalId = externalId;
         this.petId = petId;
         this.caregiverId = caregiverId;
@@ -87,15 +76,11 @@ public class DailyLog extends BaseEntity {
         this.condition = condition;
         this.weightKg = weightKg;
         this.memo = memo;
-        if (photoBase64List != null) {
-            this.photoBase64List = photoBase64List;
-        }
     }
 
     public void update(MealAmount meal, WaterAmount water, Integer walkMinutes,
                        StoolCondition pooCondition, UrineColor urineColor,
-                       Integer condition, BigDecimal weightKg, String memo,
-                       List<String> photoBase64List) {
+                       Integer condition, BigDecimal weightKg, String memo) {
         this.meal = meal;
         this.water = water;
         this.walkMinutes = walkMinutes;
@@ -104,9 +89,5 @@ public class DailyLog extends BaseEntity {
         this.condition = condition;
         this.weightKg = weightKg;
         this.memo = memo;
-        if (photoBase64List != null) {
-            this.photoBase64List.clear();
-            this.photoBase64List.addAll(photoBase64List);
-        }
     }
 }

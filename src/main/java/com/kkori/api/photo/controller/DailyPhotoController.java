@@ -22,33 +22,39 @@ public class DailyPhotoController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> create(
+            @RequestHeader("X-Device-Id") String deviceId,
             @Valid @RequestBody CreateDailyPhotoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(dailyPhotoService.create(request)));
+                .body(ApiResponse.ok(dailyPhotoService.create(deviceId, request)));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<DailyPhotoResponse>>> findByPet(
+            @RequestHeader("X-Device-Id") String deviceId,
             @RequestParam String petExternalId) {
-        return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.findByPet(petExternalId)));
+        return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.findByPet(deviceId, petExternalId)));
     }
 
     @GetMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> findOne(
+            @RequestHeader("X-Device-Id") String deviceId,
             @PathVariable String externalId) {
-        return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.findByExternalId(externalId)));
+        return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.findByExternalId(deviceId, externalId)));
     }
 
     @PutMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> update(
+            @RequestHeader("X-Device-Id") String deviceId,
             @PathVariable String externalId,
             @Valid @RequestBody UpdateDailyPhotoRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.update(externalId, request)));
+        return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.update(deviceId, externalId, request)));
     }
 
     @DeleteMapping("/{externalId}")
-    public ResponseEntity<Void> delete(@PathVariable String externalId) {
-        dailyPhotoService.delete(externalId);
+    public ResponseEntity<Void> delete(
+            @RequestHeader("X-Device-Id") String deviceId,
+            @PathVariable String externalId) {
+        dailyPhotoService.delete(deviceId, externalId);
         return ResponseEntity.noContent().build();
     }
 }
