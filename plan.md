@@ -4,17 +4,23 @@
 - [x] A-1: Spring Boot 프로젝트 세팅
 - [x] A-2: 엔티티 + DB 설계
     - Device, Caregiver, Pet, DailyPhoto, DailyLog
-    - JPA Auditing 설정
-    - 인덱스 설계 (deviceId, petId+date 등)
-- [ ] A-3: 공통 모듈
-    - ApiResponse, ErrorResponse
-    - GlobalExceptionHandler
-    - 디바이스 ID 인터셉터
+    - BaseEntity (createdAt, updatedAt, @MappedSuperclass + Auditing)
+    - JpaAuditingConfig
+    - Enum: Species, CaregiverRole, Platform, MealAmount, WaterAmount, StoolCondition, UrineColor
+    - 인덱스: deviceId, externalId(unique), (petId+date) unique constraint
+- [x] A-3: 공통 모듈
+    - ApiResponse<T>, ErrorResponse (record)
+    - ErrorCode (enum, HttpStatus 포함)
+    - BusinessException, GlobalExceptionHandler
+    - DeviceIdInterceptor (X-Device-Id 헤더)
+    - WebMvcConfig (인터셉터 등록)
+    - HealthController (GET /api/v1/health)
 - [ ] A-4: REST API CRUD
-    - Pet API
-    - Caregiver API
-    - DailyPhoto API
-    - DailyLog API
+    - Device API (POST /api/v1/devices)
+    - Caregiver API (CRUD /api/v1/caregivers)
+    - Pet API (CRUD /api/v1/pets)
+    - DailyPhoto API (CRUD /api/v1/photos)
+    - DailyLog API (CRUD /api/v1/logs)
 - [ ] A-5: 로컬 테스트 (Postman / IntelliJ HTTP Client)
 
 ## Phase B: 클라이언트 연동
