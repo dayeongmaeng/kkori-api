@@ -15,6 +15,9 @@ public class DeviceIdInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         String deviceId = request.getHeader(DEVICE_ID_HEADER);
         if (deviceId == null || deviceId.isBlank()) {
             throw new BusinessException(ErrorCode.DEVICE_001);

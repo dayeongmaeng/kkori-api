@@ -5,6 +5,8 @@ import com.kkori.api.photo.dto.request.CreateDailyPhotoRequest;
 import com.kkori.api.photo.dto.request.UpdateDailyPhotoRequest;
 import com.kkori.api.photo.dto.response.DailyPhotoResponse;
 import com.kkori.api.photo.service.DailyPhotoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "DailyPhoto", description = "데일리 포토 관리")
 @RestController
 @RequestMapping("/api/v1/photos")
 @RequiredArgsConstructor
@@ -20,6 +23,7 @@ public class DailyPhotoController {
 
     private final DailyPhotoService dailyPhotoService;
 
+    @Operation(summary = "데일리 포토 등록")
     @PostMapping
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> create(
             @RequestHeader("X-Device-Id") String deviceId,
@@ -28,6 +32,7 @@ public class DailyPhotoController {
                 .body(ApiResponse.ok(dailyPhotoService.create(deviceId, request)));
     }
 
+    @Operation(summary = "반려동물별 데일리 포토 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<DailyPhotoResponse>>> findByPet(
             @RequestHeader("X-Device-Id") String deviceId,
@@ -35,6 +40,7 @@ public class DailyPhotoController {
         return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.findByPet(deviceId, petExternalId)));
     }
 
+    @Operation(summary = "데일리 포토 단건 조회")
     @GetMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> findOne(
             @RequestHeader("X-Device-Id") String deviceId,
@@ -42,6 +48,7 @@ public class DailyPhotoController {
         return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.findByExternalId(deviceId, externalId)));
     }
 
+    @Operation(summary = "데일리 포토 수정")
     @PutMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> update(
             @RequestHeader("X-Device-Id") String deviceId,
@@ -50,6 +57,7 @@ public class DailyPhotoController {
         return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.update(deviceId, externalId, request)));
     }
 
+    @Operation(summary = "데일리 포토 삭제")
     @DeleteMapping("/{externalId}")
     public ResponseEntity<Void> delete(
             @RequestHeader("X-Device-Id") String deviceId,

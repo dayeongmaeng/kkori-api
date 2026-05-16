@@ -23,7 +23,14 @@
     - DailyLog API (CRUD /api/v1/logs) — Pet 소유 디바이스 검증
     - externalId 서버 자동 생성 (UUID), UUID 형식 검증, 중복 체크
     - Enum 정리: MealAmount, WaterAmount, StoolCondition, UrineColor
-- [ ] A-5: 로컬 테스트 (Postman / IntelliJ HTTP Client)
+- [x] A-5: springdoc-openapi (Swagger UI)
+    - springdoc-openapi-starter-webmvc-ui:2.8.17 (Spring Boot 3.5.x 호환)
+    - /api-docs, /swagger-ui.html
+    - 전 컨트롤러 @Tag + @Operation 추가
+- [x] A-6: CORS 설정
+    - WebMvcConfig.addCorsMappings — localhost:8081/19006/3000, allowCredentials(true)
+    - DeviceIdInterceptor OPTIONS 통과 (preflight 수정)
+- [x] A-7: 로컬 테스트 (Postman / IntelliJ HTTP Client)
 
 ## Phase B: 클라이언트 연동
 - [ ] B-1: 클라이언트 API 호출 모듈 (lib/api.ts)

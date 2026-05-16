@@ -6,7 +6,7 @@
 
 ## 현재 상태
 
-마지막 업데이트: 2026-05-16
+마지막 업데이트: 2026-05-17
 
 ### 완료된 작업 (Phase A-1 ~ A-4)
 
@@ -26,18 +26,28 @@
   - DailyLog: CRUD `/api/v1/logs` — Pet 소유 디바이스 검증
   - externalId: 클라이언트 미전송 시 서버 UUID 자동 생성, UUID 형식 검증(@Pattern), 중복 409
   - 사진 필드 없음 (DailyPhoto.photoBase64, DailyLog.photoBase64List 제거 — Phase E에서 재구현)
+- **A-5**: springdoc-openapi 도입
+  - `springdoc-openapi-starter-webmvc-ui:2.8.17` (Spring Boot 3.5.x 호환, 2.6.0은 NoSuchMethodError)
+  - GET `/api-docs`, GET `/swagger-ui.html`
+  - 전 컨트롤러 `@Tag` + `@Operation` 추가
+- **A-6**: CORS 설정
+  - `WebMvcConfig.addCorsMappings` — localhost:8081/19006/3000, `allowCredentials(true)`
+  - `DeviceIdInterceptor`에 OPTIONS 통과 추가 (preflight가 `X-Device-Id` 없이 오는 것 허용)
 
 ### 동작 확인된 것
 - Spring Boot 서버 정상 실행
 - PostgreSQL 연결 정상 동작
+- -Postman 테스트 완료
 
 ---
 
 ## 진행 중인 작업
 
 ### 다음 할 일 (우선순위)
-1. **A-5**: Postman / IntelliJ HTTP Client로 전 API 로컬 테스트
-2. **Phase B**: 클라이언트(React Native) 연동 시작
+1. **Phase B**: 클라이언트(React Native) 연동 시작
+   - B-1: `lib/api.ts` API 호출 모듈
+   - B-2: 디바이스 ID 생성/저장 (expo-application)
+   - B-3: 기존 AsyncStorage → 서버 마이그레이션
 
 ---
 
@@ -68,6 +78,9 @@
 | 2026-05-16 | Pet에 deviceId 컬럼 추가 (denormalize) | Photo/Log 접근 시 매번 Caregiver 조인 없이 Pet에서 바로 소유 디바이스 확인 |
 | 2026-05-16 | Enum 단순화 (4종 모두 재정의) | 클라이언트-서버 계약 명확화, 불필요한 값 제거 |
 | 2026-05-16 | 시간 필드 LocalDateTime + KST 직렬화 | 클라이언트가 타임존 변환 없이 바로 표시 가능 |
+| 2026-05-17 | springdoc-openapi 2.8.17 선택 | 2.6.0은 Spring Boot 3.5.x(Spring Framework 6.2.x)와 NoSuchMethodError; 2.8.9+에서 수정 |
+| 2026-05-17 | CORS allowCredentials(true) + 명시적 Origin | allowedOriginPatterns("*")는 쿠키 불가, 추후 JWT 도입 고려해 credentials 유지 |
+| 2026-05-17 | DeviceIdInterceptor OPTIONS 통과 | preflight는 헤더 없이 오므로 인터셉터에서 막으면 CORS 응답 자체가 실패 |
 
 ---
 
