@@ -14,6 +14,13 @@
 - Gradle
 - Lombok
 
+## 서버 정보
+- 인스턴스: kkori-api
+- 리전: Seoul, Zone A (ap-northeast-2a)
+- OS: Ubuntu 24.04 LTS
+- Public IP: 3.38.97.234
+- 사양: 512MB RAM, 2 vCPUs, 20GB SSD
+
 ## 도메인 모델
 - **Device**: 디바이스 ID 기반 소유자 식별 (회원가입 없이, 추후 User 계정과 연결)
 - **Caregiver**: 보호자 (가족 공유 대비, 한 Device에 여러 Caregiver 가능)
