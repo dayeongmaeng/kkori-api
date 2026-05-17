@@ -4,14 +4,17 @@ import com.kkori.api.common.dto.ApiResponse;
 import com.kkori.api.photo.dto.request.CreateDailyPhotoRequest;
 import com.kkori.api.photo.dto.request.UpdateDailyPhotoRequest;
 import com.kkori.api.photo.dto.response.DailyPhotoResponse;
+import com.kkori.api.photo.dto.response.PhotoUploadResponse;
 import com.kkori.api.photo.service.DailyPhotoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -55,6 +58,17 @@ public class DailyPhotoController {
             @PathVariable String externalId,
             @Valid @RequestBody UpdateDailyPhotoRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.update(deviceId, externalId, request)));
+    }
+
+    @Operation(summary = "데일리 포토 S3 업로드 (medium + thumbnail)")
+    @PostMapping(value = "/{externalId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<PhotoUploadResponse>> upload(
+            @RequestHeader("X-Device-Id") String deviceId,
+            @PathVariable String externalId,
+            @RequestPart("medium") MultipartFile medium,
+            @RequestPart("thumbnail") MultipartFile thumbnail) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                dailyPhotoService.uploadPhotos(deviceId, externalId, medium, thumbnail)));
     }
 
     @Operation(summary = "데일리 포토 삭제")

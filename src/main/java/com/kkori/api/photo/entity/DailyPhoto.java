@@ -38,6 +38,12 @@ public class DailyPhoto extends BaseEntity {
 
     private String caption;
 
+    @Column(name = "medium_url")
+    private String mediumUrl;
+
+    @Column(name = "thumbnail_url")
+    private String thumbnailUrl;
+
     @Builder
     public DailyPhoto(String externalId, Long petId, Long caregiverId,
                       LocalDate date, String caption) {
@@ -50,5 +56,10 @@ public class DailyPhoto extends BaseEntity {
 
     public void update(String caption) {
         this.caption = caption;
+    }
+
+    public void updateUrls(String mediumUrl, String thumbnailUrl) {
+        this.mediumUrl = mediumUrl;
+        this.thumbnailUrl = thumbnailUrl;
     }
 }

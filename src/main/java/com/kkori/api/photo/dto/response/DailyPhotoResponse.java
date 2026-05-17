@@ -11,6 +11,8 @@ public record DailyPhotoResponse(
         Long caregiverId,
         LocalDate date,
         String caption,
+        String mediumUrl,
+        String thumbnailUrl,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -21,6 +23,8 @@ public record DailyPhotoResponse(
                 photo.getCaregiverId(),
                 photo.getDate(),
                 photo.getCaption(),
+                photo.getMediumUrl(),
+                photo.getThumbnailUrl(),
                 photo.getCreatedAt(),
                 photo.getUpdatedAt()
         );

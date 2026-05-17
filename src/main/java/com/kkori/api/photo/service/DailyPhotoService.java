@@ -11,11 +11,14 @@ import com.kkori.api.pet.repository.PetRepository;
 import com.kkori.api.photo.dto.request.CreateDailyPhotoRequest;
 import com.kkori.api.photo.dto.request.UpdateDailyPhotoRequest;
 import com.kkori.api.photo.dto.response.DailyPhotoResponse;
+import com.kkori.api.photo.dto.response.PhotoUploadResponse;
 import com.kkori.api.photo.entity.DailyPhoto;
 import com.kkori.api.photo.repository.DailyPhotoRepository;
+import com.kkori.api.photo.storage.S3PhotoStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +32,7 @@ public class DailyPhotoService {
     private final PetRepository petRepository;
     private final CaregiverRepository caregiverRepository;
     private final DeviceRepository deviceRepository;
+    private final S3PhotoStorage s3PhotoStorage;
 
     @Transactional
     public DailyPhotoResponse create(String deviceExternalId, CreateDailyPhotoRequest request) {
@@ -91,11 +95,37 @@ public class DailyPhotoService {
     }
 
     @Transactional
+    public PhotoUploadResponse uploadPhotos(String deviceExternalId, String externalId,
+                                            MultipartFile medium, MultipartFile thumbnail) {
+        Device device = resolveDevice(deviceExternalId);
+        DailyPhoto photo = dailyPhotoRepository.findByExternalId(externalId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
+        verifyPetOwnershipById(photo.getPetId(), device.getId());
+
+        Pet pet = petRepository.findById(photo.getPetId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
+
+        String mediumUrl = s3PhotoStorage.uploadMedium(pet.getExternalId(), externalId, medium);
+        String thumbnailUrl = s3PhotoStorage.uploadThumbnail(pet.getExternalId(), externalId, thumbnail);
+
+        photo.updateUrls(mediumUrl, thumbnailUrl);
+
+        return new PhotoUploadResponse(mediumUrl, thumbnailUrl);
+    }
+
+    @Transactional
     public void delete(String deviceExternalId, String externalId) {
         Device device = resolveDevice(deviceExternalId);
         DailyPhoto photo = dailyPhotoRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         verifyPetOwnershipById(photo.getPetId(), device.getId());
+
+        if (photo.getMediumUrl() != null) {
+            Pet pet = petRepository.findById(photo.getPetId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
+            s3PhotoStorage.delete(pet.getExternalId(), externalId);
+        }
+
         dailyPhotoRepository.delete(photo);
     }
 
