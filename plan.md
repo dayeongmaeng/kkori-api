@@ -23,6 +23,7 @@
     - DailyLog API (CRUD /api/v1/logs) — Pet 소유 디바이스 검증
     - externalId 서버 자동 생성 (UUID), UUID 형식 검증, 중복 체크
     - Enum 정리: MealAmount, WaterAmount, StoolCondition, UrineColor
+    - 빈 응답(204) 처리 클라이언트 측 대응
 - [x] A-5: springdoc-openapi (Swagger UI)
     - springdoc-openapi-starter-webmvc-ui:2.8.17 (Spring Boot 3.5.x 호환)
     - /api-docs, /swagger-ui.html
@@ -31,13 +32,18 @@
     - WebMvcConfig.addCorsMappings — localhost:8081/19006/3000, allowCredentials(true)
     - DeviceIdInterceptor OPTIONS 통과 (preflight 수정)
 - [x] A-7: 로컬 테스트 (Postman / IntelliJ HTTP Client)
+- [ ] A-8: 자동 테스트 코드
+    - 단위 테스트: JUnit 5 + Mockito (서비스 레이어 80% 목표)
+    - 컨트롤러 테스트: MockMvc + @WebMvcTest (성공/실패 시나리오)
+    - 통합 테스트: Testcontainers (PostgreSQL) — 선택
 
 ## Phase B: 클라이언트 연동
-- [ ] B-1: 클라이언트 API 호출 모듈 (lib/api.ts)
-- [ ] B-2: 디바이스 ID 생성/저장 (expo-application)
-- [ ] B-3: 기존 AsyncStorage → 서버 마이그레이션
-    - 로컬 우선 + 서버 동기화 전략
-    - 또는 서버 전용으로 전환
+- [x] B-1: 클라이언트 API 호출 모듈 (lib/api.ts)
+- [x] B-2: 디바이스 ID 생성/저장 (expo-application)
+- [x] B-3: 기존 AsyncStorage → 서버 마이그레이션
+    - API + AsyncStorage 캐시 패턴 (로컬 캐시 + 서버 동기화)
+    - 사진: 메타데이터 서버, base64 로컬
+    - 프로필/포토/기록/홈 탭 모두 연동
 - [ ] B-4: 오프라인 대응
 
 ## Phase C: 배포
@@ -56,7 +62,7 @@
 ## Phase E: 사진 클라우드 저장
 - [ ] E-1: S3 또는 Cloudflare R2 선택
 - [ ] E-2: Presigned URL 발급
-- [ ] E-3: 사진 압축 + CDN
+- [ ] E-3: 사진 압축 (중간 1080px + 썸네일 300px) + CDN
 - [ ] E-4: 기존 base64 데이터 마이그레이션
 
 ## Phase F: AI 리포트
