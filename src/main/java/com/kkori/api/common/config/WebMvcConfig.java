@@ -19,7 +19,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "http://localhost:8081",
                         "http://localhost:19006",
-                        "http://localhost:3000"
+                        "http://localhost:3000",
+                        "https://test-kkori.vercel.app/"
                 )
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
