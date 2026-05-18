@@ -23,7 +23,9 @@ public enum ErrorCode {
     PHOTO_005(HttpStatus.BAD_REQUEST, "허용되지 않는 파일 형식입니다. (JPEG, PNG만 허용)"),
     PHOTO_006(HttpStatus.BAD_REQUEST, "파일 크기가 허용 한도를 초과했습니다."),
     LOG_001(HttpStatus.NOT_FOUND, "일일 기록을 찾을 수 없습니다."),
-    LOG_002(HttpStatus.CONFLICT, "해당 날짜에 이미 기록이 존재합니다.");
+    LOG_002(HttpStatus.CONFLICT, "해당 날짜에 이미 기록이 존재합니다."),
+    LOG_PHOTO_001(HttpStatus.NOT_FOUND, "기록 사진을 찾을 수 없습니다."),
+    LOG_PHOTO_002(HttpStatus.CONFLICT, "한 기록에는 사진을 최대 3장까지 첨부할 수 있습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

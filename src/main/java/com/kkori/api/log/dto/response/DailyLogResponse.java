@@ -5,6 +5,7 @@ import com.kkori.api.log.entity.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record DailyLogResponse(
         String externalId,
@@ -19,10 +20,15 @@ public record DailyLogResponse(
         Integer condition,
         BigDecimal weightKg,
         String memo,
+        List<DailyLogPhotoResponse> photos,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
     public static DailyLogResponse from(DailyLog log) {
+        return from(log, List.of());
+    }
+
+    public static DailyLogResponse from(DailyLog log, List<DailyLogPhotoResponse> photos) {
         return new DailyLogResponse(
                 log.getExternalId(),
                 log.getPetId(),
@@ -36,6 +42,7 @@ public record DailyLogResponse(
                 log.getCondition(),
                 log.getWeightKg(),
                 log.getMemo(),
+                photos,
                 log.getCreatedAt(),
                 log.getUpdatedAt()
         );
