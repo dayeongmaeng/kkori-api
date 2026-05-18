@@ -11,6 +11,7 @@ import com.kkori.api.pet.repository.PetRepository;
 import com.kkori.api.photo.dto.request.CreateDailyPhotoRequest;
 import com.kkori.api.photo.dto.request.UpdateDailyPhotoRequest;
 import com.kkori.api.photo.dto.response.DailyPhotoResponse;
+import com.kkori.api.photo.dto.response.DailyPhotoShareResponse;
 import com.kkori.api.photo.dto.response.PhotoUploadResponse;
 import com.kkori.api.photo.entity.DailyPhoto;
 import com.kkori.api.photo.repository.DailyPhotoRepository;
@@ -82,6 +83,14 @@ public class DailyPhotoService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         verifyPetOwnershipById(photo.getPetId(), device.getId());
         return DailyPhotoResponse.from(photo);
+    }
+
+    public DailyPhotoShareResponse findShareByExternalId(String externalId) {
+        DailyPhoto photo = dailyPhotoRepository.findByExternalId(externalId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
+        Pet pet = petRepository.findById(photo.getPetId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
+        return DailyPhotoShareResponse.of(photo, pet);
     }
 
     @Transactional

@@ -14,7 +14,8 @@ public record DailyPhotoResponse(
         String mediumUrl,
         String thumbnailUrl,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        boolean edited
 ) {
     public static DailyPhotoResponse from(DailyPhoto photo) {
         return new DailyPhotoResponse(
@@ -26,7 +27,14 @@ public record DailyPhotoResponse(
                 photo.getMediumUrl(),
                 photo.getThumbnailUrl(),
                 photo.getCreatedAt(),
-                photo.getUpdatedAt()
+                photo.getUpdatedAt(),
+                isEdited(photo)
         );
+    }
+
+    private static boolean isEdited(DailyPhoto photo) {
+        return photo.getCreatedAt() != null
+                && photo.getUpdatedAt() != null
+                && photo.getUpdatedAt().isAfter(photo.getCreatedAt());
     }
 }
