@@ -44,7 +44,8 @@
 - **Caregiver**: 보호자 (가족 공유 대비, 한 Device에 여러 Caregiver 가능)
 - **Pet**: 반려동물 (이름, 견종, 생일, 체중, 중성화, 메모, 사진)
 - **DailyPhoto**: 하루 한 장 데일리 포토 (petId + date unique)
-- **DailyLog**: 일일 건강 기록 (식사/산책/배변/소변/컨디션/체중/메모/사진)
+- **DailyLog**: 일일 건강 기록 (식사/산책/배변/소변/컨디션/체중/메모)
+- **DailyLogPhoto**: 기록탭 사진 (DailyLog별 최대 3장, S3 medium/thumbnail URL 저장)
 
 ## 패키지 구조
 com.kkori.api  
@@ -99,10 +100,16 @@ com.kkori.api
 - 응답 포맷 통일: ApiResponse<T> { success, data, error }
 - 검증 실패: 400, 비즈니스 예외: 400/404/409, 서버 에러: 500
 
-## 향후 계획
-- Phase A: 로컬 API 구축
-- Phase B: React Native 클라이언트 연동
-- Phase C: Lightsail 배포 + 도메인 + HTTPS 적용
-- Phase D: JWT 인증, 회원가입
-- Phase E: 사진 클라우드 저장 (S3/R2)
+## 진행 상태 / 향후 계획
+- Phase A: 로컬 API 구축 완료
+- Phase B: React Native 클라이언트 연동 완료
+- Phase C: Lightsail 배포 + 도메인 + HTTPS 적용 완료
+- Phase E: 사진 클라우드 저장 및 UX 안정화 완료
+  - 하루 한 장 사진 S3 업로드
+  - 기록 사진 기능 추가: DailyLog별 최대 3장, S3 업로드, thumbnail/medium 저장
+  - 클라이언트 큰 이미지 보기, 삭제, 업로드 실패/재시도 UX 정리
+  - 기록 사진 UI의 X 버튼 잘림 수정
+- 다음 작업 후보
+  - Vercel 도메인 연결 및 정책 페이지 준비 (`kkori.co.kr`, `www.kkori.co.kr`)
+  - Phase D 회원가입/JWT 인증 설계
 - Phase F: AI 리포트 (Codex/OpenAI API)

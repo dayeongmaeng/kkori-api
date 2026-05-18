@@ -31,23 +31,23 @@
 
 ## 이번 세션 완료 작업
 
-- 도메인 구매/결정: `kkori.co.kr`
-- API 도메인 구성: `api.kkori.co.kr`
-- DNS A 레코드 구성: `api.kkori.co.kr -> 13.124.220.29`
-- 기존 512MB Lightsail 서버에서 새 1GB Lightsail 서버로 이전 완료
-- 새 서버 Public IP 확정: `13.124.220.29`
-- Nginx + Let's Encrypt + Certbot으로 HTTPS 적용 완료
-- 최종 운영 API URL 확정: `https://api.kkori.co.kr`
-- Certbot 인증서 발급 완료
-- 새 서버에서 HTTPS 직접 확인 완료
-- Spring Boot API 컨테이너와 PostgreSQL 컨테이너 정상 구동 확인
-- S3 사진 업로드 정상 동작 확인
-- 클라이언트 최종 검증 완료
-  - 펫 조회
-  - 일일 기록 저장/조회
-  - 사진 메타 생성
-  - 사진 업로드
-  - 앱 재실행 후 서버/캐시 데이터 확인
+- Phase E 및 후속 UX 안정화 완료
+- 하루 한 장 사진 S3 업로드 서버/클라이언트 연동 완료
+- 기록 사진 기능 추가 완료
+  - DailyLog별 최대 3장
+  - S3 업로드
+  - `thumbnailUrl`, `mediumUrl` 저장
+  - 조회 응답에 사진 목록 포함
+  - 큰 이미지 보기
+  - 삭제 UX
+  - 업로드 실패/재시도 UX
+- 기록 사진 UI 수정
+  - X 버튼 잘림 문제 해결
+- 운영 인프라 기준 유지
+  - 도메인: `kkori.co.kr`
+  - API 도메인: `api.kkori.co.kr`
+  - 운영 API URL: `https://api.kkori.co.kr`
+  - 현재 운영 Public IP: `13.124.220.29`
 
 ## S3 업로드 문제 해결 기록
 
@@ -79,15 +79,24 @@ AWS_S3_BUCKET=버킷명만
 - Phase B: React Native 클라이언트 연동 완료
 - Phase C: Lightsail 배포 + 도메인 + HTTPS 적용 완료
 - Phase D: JWT 인증, 회원가입 미진행
-- Phase E: S3 사진 업로드 서버/클라이언트 연동 및 실기기 검증 완료
+- Phase E: S3 사진 업로드 및 후속 UX 안정화 완료
+  - 하루 한 장 사진 업로드 완료
+  - 기록 사진 업로드 완료
+  - thumbnail/medium 표시 완료
+  - 큰 이미지 보기, 삭제, 재시도 UX 완료
 - Phase F: AI 리포트 미진행
 
 ## Phase E 후속 UX 안정화
 
-- 업로드 실패 처리
-- 로딩/재시도 UI
-- thumbnail/medium 표시 품질 확인
-- 8080 외부 포트 닫기 확인
+- 완료
+  - 업로드 실패 처리
+  - 로딩/재시도 UI
+  - thumbnail/medium 표시 품질 확인
+  - 기록 사진 큰 이미지 보기
+  - 기록 사진 삭제
+  - 기록 사진 X 버튼 잘림 수정
+- 별도 인프라 확인 항목
+  - 8080 외부 포트 닫기 확인
 
 ## 웹/Vercel 결정
 
@@ -98,10 +107,10 @@ AWS_S3_BUCKET=버킷명만
 ## 다음 작업 후보
 
 1. 8080 외부 포트 닫기 확인
-2. 업로드 실패/재시도 UX 정리
-3. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결
-4. 개인정보처리방침/계정삭제 안내 페이지 준비
-5. Phase D 로그인/회원가입 설계
+2. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결
+3. 개인정보처리방침/계정삭제 안내 페이지 준비
+4. Phase D 로그인/회원가입 설계
+5. JWT 인증 및 디바이스 ID -> User 연결 전략 정리
 
 ## 운영 주의사항
 

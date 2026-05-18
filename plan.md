@@ -20,7 +20,8 @@
   - Caregiver API (`/api/v1/caregivers`)
   - Pet API (`/api/v1/pets`)
   - DailyPhoto API (`/api/v1/photos`)
-  - DailyLog API (`/api/v1/logs`)
+  - DailyLog API (`/api/v1/logs`, `/api/v1/daily-logs`)
+  - DailyLogPhoto 업로드/삭제 API (`/api/v1/daily-logs/{externalId}/photos/upload`)
   - externalId 서버 자동 생성, UUID 검증, 중복 체크
   - 빈 응답 204 처리
 - [x] A-5: springdoc-openapi
@@ -102,9 +103,20 @@
   - 원인: 컨테이너에 AWS/S3 환경변수가 전달되지 않음
   - 해결: `docker-compose.yml`의 `api.environment`에 AWS/S3 환경변수 추가
   - `AWS_S3_BUCKET`은 순수 버킷명만 사용
-- [ ] E-6: 업로드 실패 처리 UX
-- [ ] E-7: 로딩/재시도 UI
-- [ ] E-8: thumbnail/medium 표시 품질 확인
+- [x] E-6: 기록 사진 기능 추가
+  - DailyLog별 최대 3장
+  - S3 업로드
+  - `thumbnailUrl`, `mediumUrl` 저장
+  - 조회 응답에 사진 목록 포함
+  - 삭제 API 추가
+  - 디바이스 격리/소유권 검증 유지
+- [x] E-7: 업로드 실패 처리 UX
+- [x] E-8: 로딩/재시도 UI
+- [x] E-9: thumbnail/medium 표시 품질 확인
+- [x] E-10: 기록 사진 큰 이미지 보기
+- [x] E-11: 기록 사진 삭제/재시도 UX
+- [x] E-12: 기록 사진 UI 수정
+  - X 버튼 잘림 해결
 
 ## Phase F: AI 리포트
 
@@ -116,10 +128,10 @@
 ## 다음 작업 후보
 
 1. 8080 외부 포트 닫기 확인
-2. 업로드 실패/재시도 UX 정리
-3. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결
-4. 개인정보처리방침/계정삭제 안내 페이지 준비
-5. Phase D 로그인/회원가입 설계
+2. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결
+3. 개인정보처리방침/계정삭제 안내 페이지 준비
+4. Phase D 로그인/회원가입 설계
+5. JWT 인증 및 디바이스 ID -> User 연결 전략 정리
 
 ## 운영 검증 체크리스트
 
@@ -130,6 +142,8 @@
 - [x] S3 업로드 정상 동작
 - [x] S3 문제 원인 기록: Docker env 전달 누락
 - [x] 클라이언트 검증 완료
+- [x] Phase E 및 후속 UX 안정화 완료
+- [x] 기록 사진 S3 업로드/조회/삭제 UX 완료
 - [x] Vercel은 웹/정책/공유 페이지용 유지
 - [x] `EXPO_PUBLIC_API_URL=https://api.kkori.co.kr`
 - [ ] 8080 외부 포트 닫기 확인 필요
