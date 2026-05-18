@@ -10,7 +10,7 @@
 ## 스택
 - **클라이언트**: React Native + Expo, TypeScript strict, Expo Router, AsyncStorage 캐시
 - **서버**: Spring Boot 3.5.14, Java 21, PostgreSQL 16, JPA, Gradle, Lombok
-- **인프라**: AWS Lightsail (Seoul, Ubuntu 24.04, 512MB+2GB Swap), Docker Compose, S3
+- **인프라**: AWS Lightsail (Seoul, Ubuntu 24.04, 1GB+2GB Swap), Docker Compose, S3
 - **도구**: ClaudeCode (양쪽 저장소 각각 실행), GitHub Desktop
 
 ## 진행 상태
@@ -55,8 +55,8 @@
 
 ## 환경 정보
 - 로컬 DB: docker-compose, 5432
-- Lightsail Public IP: 3.38.97.234
-- DBeaver: SSH 터널 (ssh -i C:\dev\lightsail-key.pem -L 5432:localhost:5432 ubuntu@3.38.97.234)
+- Lightsail Public IP: 13.124.220.29
+- DBeaver: SSH 터널 (ssh -i C:\dev\lightsail-key.pem -L 5432:localhost:5432 ubuntu@13.124.220.29)
 - 클라이언트 BASE_URL: 아직 localhost (Lightsail 전환 대기)
 - S3 버킷/IAM: 생성 완료, IntelliJ Run Config에 환경변수 4개 추가 필요
 

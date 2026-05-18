@@ -18,8 +18,26 @@
 - 인스턴스: kkori-api
 - 리전: Seoul, Zone A (ap-northeast-2a)
 - OS: Ubuntu 24.04 LTS
-- Public IP: 3.38.97.234
-- 사양: 512MB RAM, 2 vCPUs, 20GB SSD
+- Public IP: 13.124.220.29
+- 사양: 1GB RAM, 2 vCPUs, 40GB SSD
+- 이전 서버 IP: 3.38.97.234 (더 이상 운영 기준 IP 아님)
+
+## 도메인 / 운영 인프라
+- 루트 도메인: `kkori.co.kr`
+- API 도메인: `api.kkori.co.kr`
+- DNS A 레코드: `api.kkori.co.kr -> 13.124.220.29`
+- 운영 API URL: `https://api.kkori.co.kr`
+- 클라이언트 환경변수: `EXPO_PUBLIC_API_URL=https://api.kkori.co.kr`
+- HTTPS: Nginx + Let's Encrypt + Certbot 적용 완료
+- 인증서 도메인: `api.kkori.co.kr`
+- `certbot renew --dry-run` 성공
+- Vercel 유지: `kkori.co.kr` / `www.kkori.co.kr`는 웹, 정책, 공유 페이지 용도
+- Lightsail Spring Boot API: `api.kkori.co.kr` 전용
+- 현재 흐름: 앱 -> `https://api.kkori.co.kr` -> Nginx 443 -> Spring Boot 8080 -> PostgreSQL -> S3
+
+## 운영 포트
+- 열려 있어야 함: 22(SSH), 80(HTTP/Certbot 갱신/HTTPS redirect), 443(HTTPS API)
+- 8080은 Nginx 프록시 뒤 내부 포트로만 사용하고, 최종적으로 외부 공개를 닫는 방향
 
 ## 도메인 모델
 - **Device**: 디바이스 ID 기반 소유자 식별 (회원가입 없이, 추후 User 계정과 연결)
@@ -82,9 +100,9 @@ com.kkori.api
 - 검증 실패: 400, 비즈니스 예외: 400/404/409, 서버 에러: 500
 
 ## 향후 계획
-- Phase A: 로컬 API 구축 (진행 중)
+- Phase A: 로컬 API 구축
 - Phase B: React Native 클라이언트 연동
-- Phase C: 배포 (Railway/Render 검토)
+- Phase C: Lightsail 배포 + 도메인 + HTTPS 적용
 - Phase D: JWT 인증, 회원가입
 - Phase E: 사진 클라우드 저장 (S3/R2)
 - Phase F: AI 리포트 (Codex/OpenAI API)

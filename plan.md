@@ -47,11 +47,32 @@
 - [ ] B-4: 오프라인 대응
 
 ## Phase C: 배포
-- [ ] C-1: 호스팅 선택 (Railway / Render / Fly.io)
-- [ ] C-2: PostgreSQL 클라우드 (Supabase DB / Railway PG / Neon)
-- [ ] C-3: 환경 변수 (application-prod.yml)
-- [ ] C-4: HTTPS + 도메인
+- [x] C-1: 호스팅 선택
+    - AWS Lightsail 사용
+    - 기존 512MB 최저 사양 서버에서 새 1GB 서버로 이전 완료
+    - 새 서버 Public IP: 13.124.220.29
+    - 이전 서버 IP 3.38.97.234는 더 이상 운영 기준 IP가 아님
+- [x] C-2: 운영 DB 구성
+    - 현재 운영 흐름: Nginx 443 → Spring Boot 8080 → PostgreSQL → S3
+- [x] C-3: 운영 환경 변수 기준 정리
+    - 클라이언트: EXPO_PUBLIC_API_URL=https://api.kkori.co.kr
+    - Lightsail에서 S3 접근 시 IAM Role을 따로 붙인 것이 아니라면 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET 필요
+- [x] C-4: HTTPS + 도메인
+    - 도메인: kkori.co.kr
+    - API 서브도메인: api.kkori.co.kr
+    - DNS A 레코드: api.kkori.co.kr → 13.124.220.29
+    - 운영 API URL: https://api.kkori.co.kr
+    - Nginx + Let's Encrypt + Certbot 적용 완료
+    - 인증서 도메인: api.kkori.co.kr
+    - certbot renew --dry-run 성공
+    - kkori.co.kr / www.kkori.co.kr은 Vercel 웹/정책/공유 페이지 용도로 유지
 - [ ] C-5: 모니터링 (로그, 메트릭)
+- [ ] C-6: 8080 외부 공개 차단
+    - HTTPS API 확인 후 8080은 외부 공개를 닫고 Nginx 내부 프록시로만 접근
+- [ ] C-7: 배포 방식 개선
+    - 512MB 서버에서 Docker/Gradle 빌드가 매우 느렸음
+    - Spring Boot + PostgreSQL + Docker 운영에는 최소 1GB 이상 필요하다고 판단
+    - 추후 서버 직접 빌드 대신 로컬/GitHub Actions 빌드 후 배포 검토
 
 ## Phase D: 인증
 - [ ] D-1: 회원가입 (이메일 + 비밀번호 또는 소셜)
@@ -60,7 +81,9 @@
 - [ ] D-4: 카카오 / 애플 로그인
 
 ## Phase E: 사진 클라우드 저장
-- [ ] E-1: S3 또는 Cloudflare R2 선택
+- [x] E-1: S3 사용 기준
+    - 운영 흐름에 S3 포함
+    - NoResourceFoundException: No static resource api/v1/photos/.../upload 발생 시 access key 문제보다 서버 Controller 매핑 또는 배포 코드 불일치 가능성이 높음
 - [ ] E-2: Presigned URL 발급
 - [ ] E-3: 사진 압축 (중간 1080px + 썸네일 300px) + CDN
 - [ ] E-4: 기존 base64 데이터 마이그레이션
@@ -73,6 +96,7 @@
 
 ## 미정 / 검토 필요
 - 가족 공유 (다중 디바이스 → 같은 펫 공유)
+    - 향후 가족 공유 링크/메모리얼 웹 페이지 가능성이 있어 `kkori.co.kr` 전용 도메인 사용
 - 심박수 / 호흡수 측정 기능
 - 약 관리 + 알림
 - 메모리얼 모드
