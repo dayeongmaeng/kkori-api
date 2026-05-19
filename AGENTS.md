@@ -28,6 +28,9 @@
 - DNS A 레코드: `api.kkori.co.kr -> 13.124.220.29`
 - 운영 API URL: `https://api.kkori.co.kr`
 - 클라이언트 환경변수: `EXPO_PUBLIC_API_URL=https://api.kkori.co.kr`
+- 클라이언트 개발 환경은 로컬 API, 운영 환경은 `https://api.kkori.co.kr` 사용
+- Expo/React Native에서는 `__DEV__`로 개발/배포 구분 가능
+- 실기기 개발 시 `localhost`는 폰 자신을 의미하므로 PC LAN IP 또는 `EXPO_PUBLIC_DEV_API_URL` 사용 필요
 - HTTPS: Nginx + Let's Encrypt + Certbot 적용 완료
 - 인증서 도메인: `api.kkori.co.kr`
 - `certbot renew --dry-run` 성공
@@ -71,6 +74,18 @@ com.kkori.api
 - Lombok 사용 (`@Getter`, `@Builder`, `@RequiredArgsConstructor`)
 - 불변 객체 선호 (`@Builder` + 필드 final)
 - DTO 사용, 엔티티 직접 노출 금지
+- 불필요한 리팩터링 금지
+- React Native + Expo + TypeScript strict 유지
+- 공유 API/조회 로직은 UI 수정 중 변경하지 않기
+- client/api 프롬프트에는 “직접 화면을 열어서 실행/확인”하라는 문구를 넣지 않기
+- 화면 확인은 사용자가 직접 진행
+- 프롬프트 검증은 “검증 포인트/기대 동작” 중심으로 작성
+
+### 로컬 실행 / DB
+- `Connection to localhost:5432 refused`는 로컬 PostgreSQL 미실행 또는 datasource URL 문제 우선 확인
+- Spring 직접 실행 시 DB URL은 `localhost:5432`
+- Docker Compose 내부 API 컨테이너에서는 `postgres:5432`
+- Windows Docker 오류는 Docker Desktop 미실행으로 발생할 수 있으며, Docker Desktop 실행 후 재시도
 
 ### 컨트롤러
 - `@RestController` + `ResponseEntity<ApiResponse<T>>`
@@ -109,7 +124,23 @@ com.kkori.api
   - 기록 사진 기능 추가: DailyLog별 최대 3장, S3 업로드, thumbnail/medium 저장
   - 클라이언트 큰 이미지 보기, 삭제, 업로드 실패/재시도 UX 정리
   - 기록 사진 UI의 X 버튼 잘림 수정
+- Phase E 후속 클라이언트/공유 UI 정리
+  - 포토탭 상단 오늘/선택 날짜 표시, 캡션 수정, `수정됨` 표시, 공유하기/공유 링크 생성 UI 프롬프트 작성
+  - 삭제 완료 시 기록탭과 동일하게 `삭제되었습니다` 문구 표시
+  - 공유 UI 대상 파일: `components/CaptionModal.tsx`, `app/photos/[externalId].tsx`, `api/share-photo.js`
+  - 공유 미리보기 모달 기준으로 실제 공유화면을 최대한 일치
+  - 날짜, 이미지, 캡션, 홍보문구, 버튼 여백 일관성 유지
+  - 가능하면 미리보기/공유화면 모두 스크롤 없이 한 화면에 들어오도록 압축
+  - 로고는 `32px x 32px`, `object-fit: contain`, `object-position: right center`
+  - `app/photos/[externalId].tsx`와 `api/share-photo.js`의 로고 위치 일관성 유지
+  - `수정됨` 표시는 작고 약하게, `꼬리에서 공유됨` 뱃지는 더 우측으로
+- 클라이언트 오류 메모
+  - `Error while reading cache, falling back to a full crawl: Unable to deserialize cloned data`는 Expo/Metro 캐시 손상 가능성이 높음
+  - 우선 `npx expo start -c`
+  - 필요 시 `.expo`, `node_modules/.cache`, temp metro/haste-map 캐시 삭제
 - 다음 작업 후보
   - Vercel 도메인 연결 및 정책 페이지 준비 (`kkori.co.kr`, `www.kkori.co.kr`)
   - Phase D 회원가입/JWT 인증 설계
+  - 포토탭 고도화와 공유 UI 최종 QA
+  - 개발/운영 API 환경 분리 값을 클라이언트 문서 또는 `.env` 예시에 정리
 - Phase F: AI 리포트 (Codex/OpenAI API)
