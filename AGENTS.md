@@ -45,7 +45,7 @@
 ## 도메인 모델
 - **Device**: 디바이스 ID 기반 소유자 식별 (회원가입 없이, 추후 User 계정과 연결)
 - **Caregiver**: 보호자 (가족 공유 대비, 한 Device에 여러 Caregiver 가능)
-- **Pet**: 반려동물 (이름, 견종, 생일, 체중, 중성화, 메모, 사진)
+- **Pet**: 반려동물 (이름, 성별, 견종, 생일/생일 모름, 함께한 날, 체중, 중성화, 메모, 사진)
 - **DailyPhoto**: 하루 한 장 데일리 포토 (petId + date unique)
 - **DailyLog**: 일일 건강 기록 (식사/산책/배변/소변/컨디션/체중/메모)
 - **DailyLogPhoto**: 기록탭 사진 (DailyLog별 최대 3장, S3 medium/thumbnail URL 저장)
@@ -134,6 +134,15 @@ com.kkori.api
   - 로고는 `32px x 32px`, `object-fit: contain`, `object-position: right center`
   - `app/photos/[externalId].tsx`와 `api/share-photo.js`의 로고 위치 일관성 유지
   - `수정됨` 표시는 작고 약하게, `꼬리에서 공유됨` 뱃지는 더 우측으로
+- 프로필탭 고도화 진행
+  - 목적: 반려동물 기본 정보 관리 + 향후 건강관리/AI 리포트 확장 기반
+  - 현재 타겟은 강아지만 유지
+  - 추가 필드: `gender` (`MALE`/`FEMALE`), `adoptionDate`(함께한 날, nullable), `birthDateUnknown`(생일 모름, boolean)
+  - `birthDateUnknown=true`이면 `birthDate` nullable 허용
+  - `breed`는 서버 enum/목록으로 관리하지 않고 string 유지
+  - 품종 추천은 클라이언트 상수 기반 자동완성으로 처리하고 자유입력 허용
+  - 서버는 `breed` 문자열 저장만 담당
+  - MVP 입력 부담 최소화를 우선하며 알레르기/약/질환 등은 추후 추가
 - 클라이언트 오류 메모
   - `Error while reading cache, falling back to a full crawl: Unable to deserialize cloned data`는 Expo/Metro 캐시 손상 가능성이 높음
   - 우선 `npx expo start -c`
@@ -141,6 +150,7 @@ com.kkori.api
 - 다음 작업 후보
   - Vercel 도메인 연결 및 정책 페이지 준비 (`kkori.co.kr`, `www.kkori.co.kr`)
   - Phase D 회원가입/JWT 인증 설계
+  - 프로필탭 고도화 완료 및 API/클라이언트 QA
   - 포토탭 고도화와 공유 UI 최종 QA
   - 개발/운영 API 환경 분리 값을 클라이언트 문서 또는 `.env` 예시에 정리
 - Phase F: AI 리포트 (Codex/OpenAI API)
