@@ -1,5 +1,7 @@
 package com.kkori.api.log.service;
 
+import com.kkori.api.auth.context.AuthContext;
+import com.kkori.api.auth.context.AuthenticatedUser;
 import com.kkori.api.caregiver.entity.Caregiver;
 import com.kkori.api.caregiver.repository.CaregiverRepository;
 import com.kkori.api.common.exception.BusinessException;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -41,10 +44,10 @@ public class DailyLogService {
 
     @Transactional
     public DailyLogResponse create(String deviceExternalId, CreateDailyLogRequest request) {
-        Device device = resolveDevice(deviceExternalId);
+        Device device = resolveDeviceForRequest(deviceExternalId);
         Pet pet = petRepository.findByExternalId(request.petExternalId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-        verifyPetOwnership(pet, device.getId());
+        verifyPetOwnership(pet, device);
 
         Caregiver caregiver = caregiverRepository.findByExternalId(request.caregiverExternalId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CAREGIVER_001));
@@ -78,10 +81,10 @@ public class DailyLogService {
     }
 
     public List<DailyLogResponse> findByPet(String deviceExternalId, String petExternalId) {
-        Device device = resolveDevice(deviceExternalId);
+        Device device = resolveDeviceForRequest(deviceExternalId);
         Pet pet = petRepository.findByExternalId(petExternalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-        verifyPetOwnership(pet, device.getId());
+        verifyPetOwnership(pet, device);
 
         return dailyLogRepository.findByPetId(pet.getId()).stream()
                 .map(this::toResponse)
@@ -89,19 +92,19 @@ public class DailyLogService {
     }
 
     public DailyLogResponse findByExternalId(String deviceExternalId, String externalId) {
-        Device device = resolveDevice(deviceExternalId);
+        Device device = resolveDeviceForRequest(deviceExternalId);
         DailyLog log = dailyLogRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
-        verifyPetOwnershipById(log.getPetId(), device.getId());
+        verifyPetOwnershipById(log.getPetId(), device);
         return toResponse(log);
     }
 
     @Transactional
     public DailyLogResponse update(String deviceExternalId, String externalId, UpdateDailyLogRequest request) {
-        Device device = resolveDevice(deviceExternalId);
+        Device device = resolveDeviceForRequest(deviceExternalId);
         DailyLog log = dailyLogRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
-        verifyPetOwnershipById(log.getPetId(), device.getId());
+        verifyPetOwnershipById(log.getPetId(), device);
         log.update(request.meal(), request.water(), request.walkMinutes(),
                 request.pooCondition(), request.urineColor(),
                 request.condition(), request.weightKg(), request.memo());
@@ -111,10 +114,10 @@ public class DailyLogService {
     @Transactional
     public DailyLogPhotoResponse uploadPhoto(String deviceExternalId, String externalId,
                                              MultipartFile medium, MultipartFile thumbnail) {
-        Device device = resolveDevice(deviceExternalId);
+        Device device = resolveDeviceForRequest(deviceExternalId);
         DailyLog log = dailyLogRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
-        verifyPetOwnershipById(log.getPetId(), device.getId());
+        verifyPetOwnershipById(log.getPetId(), device);
 
         List<DailyLogPhoto> currentPhotos = dailyLogPhotoRepository.findByDailyLogIdOrderBySortOrderAscIdAsc(log.getId());
         if (currentPhotos.size() >= MAX_PHOTOS_PER_LOG) {
@@ -143,10 +146,10 @@ public class DailyLogService {
 
     @Transactional
     public void deletePhoto(String deviceExternalId, String externalId, String photoExternalId) {
-        Device device = resolveDevice(deviceExternalId);
+        Device device = resolveDeviceForRequest(deviceExternalId);
         DailyLog log = dailyLogRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
-        verifyPetOwnershipById(log.getPetId(), device.getId());
+        verifyPetOwnershipById(log.getPetId(), device);
 
         DailyLogPhoto photo = dailyLogPhotoRepository.findByExternalId(photoExternalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_PHOTO_001));
@@ -162,10 +165,10 @@ public class DailyLogService {
 
     @Transactional
     public void delete(String deviceExternalId, String externalId) {
-        Device device = resolveDevice(deviceExternalId);
+        Device device = resolveDeviceForRequest(deviceExternalId);
         DailyLog log = dailyLogRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
-        verifyPetOwnershipById(log.getPetId(), device.getId());
+        verifyPetOwnershipById(log.getPetId(), device);
 
         Pet pet = petRepository.findById(log.getPetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
@@ -191,21 +194,38 @@ public class DailyLogService {
                 .orElse(-1) + 1;
     }
 
-    private Device resolveDevice(String deviceExternalId) {
-        return deviceRepository.findByExternalId(deviceExternalId)
+    private Device resolveDeviceForRequest(String deviceExternalId) {
+        if (AuthContext.currentUser().isPresent()) {
+            return resolveDevice(deviceExternalId).orElse(null);
+        }
+        return resolveDevice(deviceExternalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
     }
 
-    private void verifyPetOwnership(Pet pet, Long deviceId) {
-        if (!pet.getDeviceId().equals(deviceId)) {
+    private Optional<Device> resolveDevice(String deviceExternalId) {
+        if (deviceExternalId == null || deviceExternalId.isBlank()) {
+            return Optional.empty();
+        }
+        return deviceRepository.findByExternalId(deviceExternalId);
+    }
+
+    private void verifyPetOwnership(Pet pet, Device device) {
+        Optional<AuthenticatedUser> currentUser = AuthContext.currentUser();
+        if (currentUser.isPresent() && pet.getUserId() != null && pet.getUserId().equals(currentUser.get().userId())) {
+            return;
+        }
+        if (device != null && device.getUserId() != null && pet.getUserId() != null && pet.getUserId().equals(device.getUserId())) {
+            return;
+        }
+        if (device == null || pet.getDeviceId() == null || !pet.getDeviceId().equals(device.getId())) {
             throw new BusinessException(ErrorCode.PET_001);
         }
     }
 
-    private void verifyPetOwnershipById(Long petId, Long deviceId) {
+    private void verifyPetOwnershipById(Long petId, Device device) {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-        verifyPetOwnership(pet, deviceId);
+        verifyPetOwnership(pet, device);
     }
 
     private String resolveExternalId(String externalId) {

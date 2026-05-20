@@ -83,10 +83,59 @@
 
 ## Phase D: 인증
 
-- [ ] D-1: 회원가입 설계 (이메일/비밀번호 또는 소셜)
-- [ ] D-2: JWT 발급/검증
-- [ ] D-3: 디바이스 ID -> User 연결 마이그레이션
-- [ ] D-4: 카카오/애플 로그인 검토
+- [x] D-1: OAuth 전용 회원가입/로그인 설계
+  - 이메일/비밀번호 가입 없음
+  - provider enum: `GOOGLE`, `KAKAO`, `APPLE`
+  - 우선 구현: `GOOGLE`, `KAKAO`
+- [x] D-2: User 엔티티 추가
+  - `externalId` UUID
+  - `provider`, `providerUserId`
+  - `email`, `nickname`, `profileImageUrl` nullable
+  - `provider + providerUserId` unique
+  - BaseEntity 상속
+- [x] D-3: OAuth 로그인 API 추가
+  - `POST /api/v1/auth/oauth/login`
+  - 요청: provider, idToken/accessToken, deviceExternalId
+  - 응답: JWT accessToken/refreshToken, user
+- [x] D-4: JWT access/refresh 발급 구조 추가
+  - 민감정보/OAuth 토큰 로그 금지
+  - provider별 verifier 구조 추가
+  - Google/Kakao verifier 실제 검증 구현 완료
+- [x] D-5: Device 역할 전환
+  - Device는 설치 기기/세션/푸시 보조 정보로 사용
+  - `Device.userId`로 User 연결
+  - 기존 `X-Device-Id` 흐름 유지
+- [x] D-6: 기존 Device 기반 데이터 단계적 마이그레이션
+  - `Pet.userId` nullable 추가
+  - OAuth 로그인 성공 시 현재 deviceId의 기존 Pet들을 userId에 연결
+  - DailyPhoto/DailyLog는 기존 petId 기반 유지
+  - 조회/수정 권한 검증은 userId 우선, 없으면 기존 deviceId fallback
+- [x] D-7: 실제 OAuth 토큰 검증 연동
+  - Google idToken 검증
+  - `GOOGLE_CLIENT_ID` audience 검증
+  - Google providerUserId/email/profile 추출
+  - Kakao accessToken 검증
+  - Kakao 사용자 정보 API 호출
+  - Kakao providerUserId/email/profile 추출
+  - OAuth 실패 시 401 BusinessException
+  - Apple 로그인은 enum만 준비, 추후 구현
+- [x] D-8: JWT 인증 골격 완성
+  - 환경변수 `JWT_SECRET` 기반 설정
+  - `JWT_SECRET` 미설정 또는 32자 미만이면 서버 시작 실패
+  - `Authorization: Bearer {accessToken}` 검증 필터 추가
+  - 유효하면 요청 컨텍스트에 `userId`, `userExternalId` 세팅
+  - 만료/위조 토큰은 401
+  - 토큰이 없으면 기존 `X-Device-Id` 흐름 fallback 유지
+  - 공개 API(auth, health, swagger, 공유 조회)는 필터 제외
+- [x] D-9: refresh 재발급 API 추가
+  - `POST /api/v1/auth/refresh`
+  - refreshToken 검증 후 새 accessToken 발급
+  - refreshToken rotation/revocation은 TODO
+- [ ] D-10: 운영 JWT 설정 적용
+  - local/dev/prod 모두 `JWT_SECRET` 설정 필요
+  - 예시: `JWT_SECRET=<32자 이상 랜덤 문자열>`
+  - 예시: `JWT_ACCESS_TOKEN_TTL_SECONDS=3600`
+  - 예시: `JWT_REFRESH_TOKEN_TTL_SECONDS=2592000`
 
 ## Phase E: 사진 클라우드 저장
 
@@ -165,8 +214,8 @@
 1. 8080 외부 포트 닫기 확인
 2. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결
 3. 개인정보처리방침/계정삭제 안내 페이지 준비
-4. Phase D 로그인/회원가입 설계
-5. JWT 인증 및 디바이스 ID -> User 연결 전략 정리
+4. 실제 Google/Kakao OAuth 실기기 로그인 QA
+5. 운영 `JWT_SECRET`/`GOOGLE_CLIENT_ID`/Kakao 키 설정 반영 및 배포 환경 확인
 6. 프로필탭 고도화 완료 및 API/클라이언트 QA
 7. 설정/정책/권한/후원 UI 최종 QA
 
@@ -184,4 +233,6 @@
 - [x] Vercel은 웹/정책/공유 페이지용 유지
 - [x] `EXPO_PUBLIC_API_URL=https://api.kkori.co.kr`
 - [x] 설정/프로필 UX 정리 완료
+- [x] OAuth 전용 User 소유권 전환 1차 구현 완료
+- [x] JWT 인증 골격 및 refresh 재발급 API 구현 완료
 - [x] 8080 외부 포트 닫기 확인 필요

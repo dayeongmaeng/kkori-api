@@ -29,7 +29,7 @@ public class DailyLogController {
     @Operation(summary = "일일 기록 등록")
     @PostMapping
     public ResponseEntity<ApiResponse<DailyLogResponse>> create(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @Valid @RequestBody CreateDailyLogRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(dailyLogService.create(deviceId, request)));
@@ -38,7 +38,7 @@ public class DailyLogController {
     @Operation(summary = "반려동물별 일일 기록 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<DailyLogResponse>>> findByPet(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @RequestParam String petExternalId) {
         return ResponseEntity.ok(ApiResponse.ok(dailyLogService.findByPet(deviceId, petExternalId)));
     }
@@ -46,7 +46,7 @@ public class DailyLogController {
     @Operation(summary = "일일 기록 단건 조회")
     @GetMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyLogResponse>> findOne(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId) {
         return ResponseEntity.ok(ApiResponse.ok(dailyLogService.findByExternalId(deviceId, externalId)));
     }
@@ -54,7 +54,7 @@ public class DailyLogController {
     @Operation(summary = "일일 기록 수정")
     @PutMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyLogResponse>> update(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId,
             @Valid @RequestBody UpdateDailyLogRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(dailyLogService.update(deviceId, externalId, request)));
@@ -63,7 +63,7 @@ public class DailyLogController {
     @Operation(summary = "일일 기록 사진 S3 업로드 (medium + thumbnail)")
     @PostMapping(value = "/{externalId}/photos/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<DailyLogPhotoResponse>> uploadPhoto(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId,
             @RequestPart("medium") MultipartFile medium,
             @RequestPart("thumbnail") MultipartFile thumbnail) {
@@ -74,7 +74,7 @@ public class DailyLogController {
     @Operation(summary = "일일 기록 사진 삭제")
     @DeleteMapping("/{externalId}/photos/{photoExternalId}")
     public ResponseEntity<Void> deletePhoto(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId,
             @PathVariable String photoExternalId) {
         dailyLogService.deletePhoto(deviceId, externalId, photoExternalId);
@@ -84,7 +84,7 @@ public class DailyLogController {
     @Operation(summary = "일일 기록 삭제")
     @DeleteMapping("/{externalId}")
     public ResponseEntity<Void> delete(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId) {
         dailyLogService.delete(deviceId, externalId);
         return ResponseEntity.noContent().build();

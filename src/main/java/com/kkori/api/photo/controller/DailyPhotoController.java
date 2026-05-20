@@ -30,7 +30,7 @@ public class DailyPhotoController {
     @Operation(summary = "데일리 포토 등록")
     @PostMapping
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> create(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @Valid @RequestBody CreateDailyPhotoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(dailyPhotoService.create(deviceId, request)));
@@ -39,7 +39,7 @@ public class DailyPhotoController {
     @Operation(summary = "반려동물별 데일리 포토 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<DailyPhotoResponse>>> findByPet(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @RequestParam String petExternalId) {
         return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.findByPet(deviceId, petExternalId)));
     }
@@ -47,7 +47,7 @@ public class DailyPhotoController {
     @Operation(summary = "데일리 포토 단건 조회")
     @GetMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> findOne(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId) {
         return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.findByExternalId(deviceId, externalId)));
     }
@@ -62,7 +62,7 @@ public class DailyPhotoController {
     @Operation(summary = "데일리 포토 수정")
     @PatchMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> patch(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId,
             @Valid @RequestBody UpdateDailyPhotoRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.update(deviceId, externalId, request)));
@@ -71,7 +71,7 @@ public class DailyPhotoController {
     @Operation(summary = "데일리 포토 수정")
     @PutMapping("/{externalId}")
     public ResponseEntity<ApiResponse<DailyPhotoResponse>> update(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId,
             @Valid @RequestBody UpdateDailyPhotoRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(dailyPhotoService.update(deviceId, externalId, request)));
@@ -80,7 +80,7 @@ public class DailyPhotoController {
     @Operation(summary = "데일리 포토 S3 업로드 (medium + thumbnail)")
     @PostMapping(value = "/{externalId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PhotoUploadResponse>> upload(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId,
             @RequestPart("medium") MultipartFile medium,
             @RequestPart("thumbnail") MultipartFile thumbnail) {
@@ -91,7 +91,7 @@ public class DailyPhotoController {
     @Operation(summary = "데일리 포토 삭제")
     @DeleteMapping("/{externalId}")
     public ResponseEntity<Void> delete(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId) {
         dailyPhotoService.delete(deviceId, externalId);
         return ResponseEntity.noContent().build();

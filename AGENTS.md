@@ -28,6 +28,8 @@
 - DNS A 레코드: `api.kkori.co.kr -> 13.124.220.29`
 - 운영 API URL: `https://api.kkori.co.kr`
 - 클라이언트 환경변수: `EXPO_PUBLIC_API_URL=https://api.kkori.co.kr`
+- JWT secret은 환경변수 `JWT_SECRET`으로만 설정하며, 로컬/개발/운영 모두 최소 32자 이상 값 필요
+- `JWT_SECRET` 미설정 또는 32자 미만이면 서버 시작 시 명확한 에러로 실패
 - 클라이언트 개발 환경은 로컬 API, 운영 환경은 `https://api.kkori.co.kr` 사용
 - Expo/React Native에서는 `__DEV__`로 개발/배포 구분 가능
 - 실기기 개발 시 `localhost`는 폰 자신을 의미하므로 PC LAN IP 또는 `EXPO_PUBLIC_DEV_API_URL` 사용 필요
@@ -43,9 +45,10 @@
 - 8080은 Nginx 프록시 뒤 내부 포트로만 사용하고, 최종적으로 외부 공개를 닫는 방향
 
 ## 도메인 모델
-- **Device**: 디바이스 ID 기반 소유자 식별 (회원가입 없이, 추후 User 계정과 연결)
+- **User**: OAuth 전용 계정 소유자 (GOOGLE/KAKAO 우선, APPLE enum 준비)
+- **Device**: 설치 기기/세션/푸시 보조 정보 (`Device.userId`로 User 연결, 기존 `X-Device-Id` 흐름 유지)
 - **Caregiver**: 보호자 (가족 공유 대비, 한 Device에 여러 Caregiver 가능)
-- **Pet**: 반려동물 (이름, 성별, 견종, 생일/생일 모름, 함께한 날, 체중, 중성화, 메모, 사진)
+- **Pet**: 반려동물 (User 소유권으로 전환 중, `userId` nullable + 기존 `deviceId` fallback, 이름, 성별, 견종, 생일/생일 모름, 함께한 날, 체중, 중성화, 메모, 사진)
 - **DailyPhoto**: 하루 한 장 데일리 포토 (petId + date unique)
 - **DailyLog**: 일일 건강 기록 (식사/산책/배변/소변/컨디션/체중/메모)
 - **DailyLogPhoto**: 기록탭 사진 (DailyLog별 최대 3장, S3 medium/thumbnail URL 저장)
@@ -53,6 +56,8 @@
 ## 패키지 구조
 com.kkori.api  
 ├── common         # 공통 응답, 예외, 설정  
+├── auth           # OAuth 로그인, JWT 발급
+├── user           # OAuth 사용자
 ├── device         # 디바이스 관리  
 ├── caregiver      # 보호자  
 ├── pet            # 반려동물  
@@ -143,6 +148,31 @@ com.kkori.api
   - 품종 추천은 클라이언트 상수 기반 자동완성으로 처리하고 자유입력 허용
   - 서버는 `breed` 문자열 저장만 담당
   - MVP 입력 부담 최소화를 우선하며 알레르기/약/질환 등은 추후 추가
+- OAuth 전용 인증 전환 진행
+  - 이메일/비밀번호 가입은 사용하지 않음
+  - provider enum: `GOOGLE`, `KAKAO`, `APPLE`; 우선 구현은 `GOOGLE`, `KAKAO`
+  - `POST /api/v1/auth/oauth/login`: provider, idToken/accessToken, deviceExternalId 요청
+  - 응답: JWT accessToken/refreshToken, user
+  - User는 `externalId` UUID, provider/providerUserId, nullable email/nickname/profileImageUrl 보유
+  - `provider + providerUserId` unique
+  - Device는 소유자가 아니라 설치 기기/세션/푸시 보조 정보이며 `Device.userId`로 User 연결
+  - OAuth 로그인 성공 시 현재 deviceId의 기존 Pet 중 `userId`가 없는 데이터를 User에 연결
+  - DailyPhoto/DailyLog는 기존 petId 기반 유지
+  - 조회/수정 권한 검증은 userId 우선, 없으면 기존 deviceId fallback
+  - 민감정보와 OAuth 토큰은 로그에 남기지 않음
+  - OAuth verifier는 provider별로 분리
+  - Google은 idToken을 `https://oauth2.googleapis.com/tokeninfo`로 검증하고 `GOOGLE_CLIENT_ID` audience 대조
+  - Kakao는 accessToken으로 `https://kapi.kakao.com/v2/user/me` 호출 후 사용자 정보 추출
+  - OAuth 실패는 401 BusinessException으로 처리
+- JWT 인증 골격 구현 완료
+  - `Authorization: Bearer {accessToken}` 검증 필터 추가
+  - 유효한 accessToken이면 요청 컨텍스트에 `userId`, `userExternalId` 세팅
+  - 만료/위조 토큰은 401 + `ApiResponse<T>` 에러 포맷
+  - 토큰이 없으면 기존 `X-Device-Id` 흐름 fallback 유지
+  - 공개 API(auth, health, swagger, 공유 조회)는 JWT 필터 제외
+  - `POST /api/v1/auth/refresh`: refreshToken 검증 후 새 accessToken 발급
+  - refreshToken rotation/revocation은 TODO
+  - 운영 설정 예시: `JWT_SECRET=<32자 이상 랜덤 문자열>`, `JWT_ACCESS_TOKEN_TTL_SECONDS=3600`, `JWT_REFRESH_TOKEN_TTL_SECONDS=2592000`
 - 설정/프로필탭 UX 정리 완료
   - 캐시 비우기는 `AsyncStorage.clear()` 제거, 캐시 키만 선별 삭제 + `try/catch` 처리 완료
   - 정책/약관/업데이트 소식은 Notion 공개 링크로 연결 완료

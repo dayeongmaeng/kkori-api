@@ -26,7 +26,7 @@ public class PetController {
     @Operation(summary = "반려동물 등록")
     @PostMapping
     public ResponseEntity<ApiResponse<PetResponse>> create(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @Valid @RequestBody CreatePetRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(petService.create(deviceId, request)));
@@ -35,14 +35,14 @@ public class PetController {
     @Operation(summary = "반려동물 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<PetResponse>>> findAll(
-            @RequestHeader("X-Device-Id") String deviceId) {
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId) {
         return ResponseEntity.ok(ApiResponse.ok(petService.findAll(deviceId)));
     }
 
     @Operation(summary = "반려동물 단건 조회")
     @GetMapping("/{externalId}")
     public ResponseEntity<ApiResponse<PetResponse>> findOne(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId) {
         return ResponseEntity.ok(ApiResponse.ok(petService.findByExternalId(deviceId, externalId)));
     }
@@ -50,7 +50,7 @@ public class PetController {
     @Operation(summary = "반려동물 수정")
     @PutMapping("/{externalId}")
     public ResponseEntity<ApiResponse<PetResponse>> update(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId,
             @Valid @RequestBody UpdatePetRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(petService.update(deviceId, externalId, request)));
@@ -59,7 +59,7 @@ public class PetController {
     @Operation(summary = "반려동물 삭제")
     @DeleteMapping("/{externalId}")
     public ResponseEntity<Void> delete(
-            @RequestHeader("X-Device-Id") String deviceId,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @PathVariable String externalId) {
         petService.delete(deviceId, externalId);
         return ResponseEntity.noContent().build();

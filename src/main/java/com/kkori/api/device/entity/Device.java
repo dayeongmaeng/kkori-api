@@ -36,4 +36,8 @@ public class Device extends BaseEntity {
     public void update(Platform platform) {
         this.platform = platform;
     }
+
+    public void connectUser(Long userId) {
+        this.userId = userId;
+    }
 }

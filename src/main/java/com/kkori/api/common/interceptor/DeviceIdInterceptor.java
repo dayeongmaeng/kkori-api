@@ -2,6 +2,7 @@ package com.kkori.api.common.interceptor;
 
 import com.kkori.api.common.exception.BusinessException;
 import com.kkori.api.common.exception.ErrorCode;
+import com.kkori.api.auth.context.AuthContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,9 @@ public class DeviceIdInterceptor implements HandlerInterceptor {
             return true;
         }
         String deviceId = request.getHeader(DEVICE_ID_HEADER);
+        if ((deviceId == null || deviceId.isBlank()) && AuthContext.currentUser().isPresent()) {
+            return true;
+        }
         if (deviceId == null || deviceId.isBlank()) {
             throw new BusinessException(ErrorCode.DEVICE_001);
         }

@@ -1,5 +1,7 @@
 package com.kkori.api.pet.service;
 
+import com.kkori.api.auth.context.AuthContext;
+import com.kkori.api.auth.context.AuthenticatedUser;
 import com.kkori.api.common.exception.BusinessException;
 import com.kkori.api.common.exception.ErrorCode;
 import com.kkori.api.device.entity.Device;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,8 +29,10 @@ public class PetService {
 
     @Transactional
     public PetResponse create(String deviceExternalId, CreatePetRequest request) {
-        Device device = deviceRepository.findByExternalId(deviceExternalId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
+        Optional<AuthenticatedUser> currentUser = AuthContext.currentUser();
+        Device device = currentUser.isPresent()
+                ? resolveDevice(deviceExternalId).orElse(null)
+                : requireDevice(deviceExternalId);
 
         String externalId = resolveExternalId(request.externalId());
         if (request.externalId() != null && !request.externalId().isBlank()
@@ -37,7 +42,9 @@ public class PetService {
 
         Pet pet = Pet.builder()
                 .externalId(externalId)
-                .deviceId(device.getId())
+                .deviceId(device == null ? null : device.getId())
+                .userId(currentUser.map(AuthenticatedUser::userId)
+                        .orElse(device == null ? null : device.getUserId()))
                 .name(request.name())
                 .species(request.species())
                 .gender(request.gender())
@@ -54,26 +61,34 @@ public class PetService {
     }
 
     public List<PetResponse> findAll(String deviceExternalId) {
-        Device device = deviceRepository.findByExternalId(deviceExternalId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
+        Optional<AuthenticatedUser> currentUser = AuthContext.currentUser();
+        if (currentUser.isPresent()) {
+            return petRepository.findByUserId(currentUser.get().userId()).stream()
+                    .map(PetResponse::from)
+                    .toList();
+        }
+        Device device = requireDevice(deviceExternalId);
+        if (device.getUserId() != null) {
+            return petRepository.findByUserId(device.getUserId()).stream()
+                    .map(PetResponse::from)
+                    .toList();
+        }
         return petRepository.findByDeviceId(device.getId()).stream()
                 .map(PetResponse::from)
                 .toList();
     }
 
     public PetResponse findByExternalId(String deviceExternalId, String externalId) {
-        Device device = deviceRepository.findByExternalId(deviceExternalId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
-        return petRepository.findByExternalIdAndDeviceId(externalId, device.getId())
+        Device device = resolveDevice(deviceExternalId).orElse(null);
+        return findOwnedPet(externalId, device)
                 .map(PetResponse::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
     }
 
     @Transactional
     public PetResponse update(String deviceExternalId, String externalId, UpdatePetRequest request) {
-        Device device = deviceRepository.findByExternalId(deviceExternalId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
-        Pet pet = petRepository.findByExternalIdAndDeviceId(externalId, device.getId())
+        Device device = resolveDevice(deviceExternalId).orElse(null);
+        Pet pet = findOwnedPet(externalId, device)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         pet.update(request.name(), request.species(), request.gender(), request.breed(), request.birthDate(),
                 request.birthDateUnknown(), request.adoptionDate(),
@@ -83,11 +98,40 @@ public class PetService {
 
     @Transactional
     public void delete(String deviceExternalId, String externalId) {
-        Device device = deviceRepository.findByExternalId(deviceExternalId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
-        Pet pet = petRepository.findByExternalIdAndDeviceId(externalId, device.getId())
+        Device device = resolveDevice(deviceExternalId).orElse(null);
+        Pet pet = findOwnedPet(externalId, device)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         petRepository.delete(pet);
+    }
+
+    private Optional<Pet> findOwnedPet(String externalId, Device device) {
+        Optional<AuthenticatedUser> currentUser = AuthContext.currentUser();
+        if (currentUser.isPresent()) {
+            return petRepository.findByExternalIdAndUserId(externalId, currentUser.get().userId())
+                    .or(() -> device == null
+                            ? Optional.empty()
+                            : petRepository.findByExternalIdAndDeviceId(externalId, device.getId()));
+        }
+        if (device != null && device.getUserId() != null) {
+            return petRepository.findByExternalIdAndUserId(externalId, device.getUserId())
+                    .or(() -> petRepository.findByExternalIdAndDeviceId(externalId, device.getId()));
+        }
+        if (device == null) {
+            return Optional.empty();
+        }
+        return petRepository.findByExternalIdAndDeviceId(externalId, device.getId());
+    }
+
+    private Device requireDevice(String deviceExternalId) {
+        return resolveDevice(deviceExternalId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
+    }
+
+    private Optional<Device> resolveDevice(String deviceExternalId) {
+        if (deviceExternalId == null || deviceExternalId.isBlank()) {
+            return Optional.empty();
+        }
+        return deviceRepository.findByExternalId(deviceExternalId);
     }
 
     private String resolveExternalId(String externalId) {
