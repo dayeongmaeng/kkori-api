@@ -143,6 +143,12 @@ com.kkori.api
   - 품종 추천은 클라이언트 상수 기반 자동완성으로 처리하고 자유입력 허용
   - 서버는 `breed` 문자열 저장만 담당
   - MVP 입력 부담 최소화를 우선하며 알레르기/약/질환 등은 추후 추가
+- 설정/프로필탭 UX 정리 완료
+  - 캐시 비우기는 `AsyncStorage.clear()` 제거, 캐시 키만 선별 삭제 + `try/catch` 처리 완료
+  - 정책/약관/업데이트 소식은 Notion 공개 링크로 연결 완료
+  - 알림 섹션은 전체 주석 처리, 알림 권한은 권한 섹션으로 이동
+  - `꼬리 흔들게 하기`는 이스터에그로 유지
+  - `꼬리 응원하기`는 토스 후원 링크 기반 후원 UI 추가 완료
 - 클라이언트 오류 메모
   - `Error while reading cache, falling back to a full crawl: Unable to deserialize cloned data`는 Expo/Metro 캐시 손상 가능성이 높음
   - 우선 `npx expo start -c`
@@ -151,6 +157,7 @@ com.kkori.api
   - Vercel 도메인 연결 및 정책 페이지 준비 (`kkori.co.kr`, `www.kkori.co.kr`)
   - Phase D 회원가입/JWT 인증 설계
   - 프로필탭 고도화 완료 및 API/클라이언트 QA
+  - 설정/정책/권한/후원 UI 최종 QA
   - 포토탭 고도화와 공유 UI 최종 QA
   - 개발/운영 API 환경 분리 값을 클라이언트 문서 또는 `.env` 예시에 정리
 - Phase F: AI 리포트 (Codex/OpenAI API)
