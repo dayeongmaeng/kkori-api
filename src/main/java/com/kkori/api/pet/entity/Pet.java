@@ -32,9 +32,17 @@ public class Pet extends BaseEntity {
     @Column(nullable = false)
     private Species species;
 
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
     private String breed;
 
     private LocalDate birthDate;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean birthDateUnknown = false;
+
+    private LocalDate adoptionDate;
 
     @Column(precision = 5, scale = 2)
     private BigDecimal weightKg;
@@ -50,26 +58,34 @@ public class Pet extends BaseEntity {
 
     @Builder
     public Pet(String externalId, Long deviceId, String name, Species species, String breed,
-               LocalDate birthDate, BigDecimal weightKg, boolean neutered,
+               Gender gender, LocalDate birthDate, boolean birthDateUnknown, LocalDate adoptionDate,
+               BigDecimal weightKg, boolean neutered,
                String medicalNotes, String photoBase64) {
         this.externalId = externalId;
         this.deviceId = deviceId;
         this.name = name;
         this.species = species;
+        this.gender = gender;
         this.breed = breed;
         this.birthDate = birthDate;
+        this.birthDateUnknown = birthDateUnknown;
+        this.adoptionDate = adoptionDate;
         this.weightKg = weightKg;
         this.neutered = neutered;
         this.medicalNotes = medicalNotes;
         this.photoBase64 = photoBase64;
     }
 
-    public void update(String name, Species species, String breed, LocalDate birthDate,
+    public void update(String name, Species species, Gender gender, String breed, LocalDate birthDate,
+                       boolean birthDateUnknown, LocalDate adoptionDate,
                        BigDecimal weightKg, boolean neutered, String medicalNotes, String photoBase64) {
         this.name = name;
         this.species = species;
+        this.gender = gender;
         this.breed = breed;
         this.birthDate = birthDate;
+        this.birthDateUnknown = birthDateUnknown;
+        this.adoptionDate = adoptionDate;
         this.weightKg = weightKg;
         this.neutered = neutered;
         this.medicalNotes = medicalNotes;

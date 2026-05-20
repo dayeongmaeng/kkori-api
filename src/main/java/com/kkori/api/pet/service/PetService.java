@@ -40,8 +40,11 @@ public class PetService {
                 .deviceId(device.getId())
                 .name(request.name())
                 .species(request.species())
+                .gender(request.gender())
                 .breed(request.breed())
                 .birthDate(request.birthDate())
+                .birthDateUnknown(request.birthDateUnknown())
+                .adoptionDate(request.adoptionDate())
                 .weightKg(request.weightKg())
                 .neutered(request.neutered())
                 .medicalNotes(request.medicalNotes())
@@ -72,7 +75,8 @@ public class PetService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.DEVICE_002));
         Pet pet = petRepository.findByExternalIdAndDeviceId(externalId, device.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-        pet.update(request.name(), request.species(), request.breed(), request.birthDate(),
+        pet.update(request.name(), request.species(), request.gender(), request.breed(), request.birthDate(),
+                request.birthDateUnknown(), request.adoptionDate(),
                 request.weightKg(), request.neutered(), request.medicalNotes(), request.photoBase64());
         return PetResponse.from(pet);
     }
