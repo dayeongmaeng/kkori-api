@@ -47,7 +47,7 @@
   - 프로필/포토/기록/캘린더 연동
 - [x] B-4: 운영 API URL 전환
   - `EXPO_PUBLIC_API_URL=https://api.kkori.co.kr`
-- [ ] B-5: 오프라인 UX 정리
+- [x] B-5: 오프라인 UX 정리
 
 ## Phase C: 배포 / 도메인 / HTTPS
 
@@ -73,7 +73,7 @@
   - `kkori.co.kr` / `www.kkori.co.kr`는 Vercel 유지
   - 용도: 웹 랜딩, 개인정보처리방침, 계정삭제 안내, 가족 공유/메모리얼 페이지
   - `api.kkori.co.kr`만 Lightsail API 서버로 연결
-- [ ] C-6: 8080 외부 포트 닫기 확인
+- [x] C-6: 8080 외부 포트 닫기 확인
   - 22, 80, 443은 열어 둔다.
   - 8080은 Nginx 내부 프록시로만 사용한다.
   - 현재 상태는 닫기 예정/확인 필요.
@@ -127,16 +127,16 @@
 
 ## 프로필탭 고도화
 
-- [ ] P-1: Pet 프로필 필드 확장
+- [x] P-1: Pet 프로필 필드 확장
   - `gender`: `MALE` / `FEMALE`
   - `adoptionDate`: 함께한 날, nullable
   - `birthDateUnknown`: 생일 모름 여부, boolean
   - `birthDateUnknown=true`이면 `birthDate` nullable 허용
-- [ ] P-2: 서버 정책 정리
+- [x] P-2: 서버 정책 정리
   - 현재 타겟은 강아지만 유지
   - `breed`는 서버 enum/목록으로 관리하지 않고 string 유지
   - 서버는 `breed` 문자열 저장만 담당
-- [ ] P-3: 클라이언트 입력 UX 정리
+- [x] P-3: 클라이언트 입력 UX 정리
   - 품종 추천은 클라이언트 상수 기반 자동완성으로 처리
   - 품종 자유입력 허용
   - MVP에서는 입력 부담 최소화 우선
@@ -184,4 +184,4 @@
 - [x] Vercel은 웹/정책/공유 페이지용 유지
 - [x] `EXPO_PUBLIC_API_URL=https://api.kkori.co.kr`
 - [x] 설정/프로필 UX 정리 완료
-- [ ] 8080 외부 포트 닫기 확인 필요
+- [x] 8080 외부 포트 닫기 확인 필요
