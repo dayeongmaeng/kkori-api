@@ -110,7 +110,7 @@ public class PetService {
             return petRepository.findByExternalIdAndUserId(externalId, currentUser.get().userId())
                     .or(() -> device == null
                             ? Optional.empty()
-                            : petRepository.findByExternalIdAndDeviceId(externalId, device.getId()));
+                            : petRepository.findByExternalIdAndDeviceIdAndUserIdIsNull(externalId, device.getId()));
         }
         if (device != null && device.getUserId() != null) {
             return petRepository.findByExternalIdAndUserId(externalId, device.getUserId())

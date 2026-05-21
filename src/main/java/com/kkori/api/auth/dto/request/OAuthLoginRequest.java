@@ -8,6 +8,8 @@ public record OAuthLoginRequest(
         @NotNull OAuthProvider provider,
         String idToken,
         String accessToken,
+        String code,
+        String redirectUri,
         @NotBlank String deviceExternalId
 ) {
     public String token() {

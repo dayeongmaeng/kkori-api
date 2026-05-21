@@ -50,4 +50,3 @@ auth:
       client-id: ${GOOGLE_CLIENT_ID:}
     kakao:
       rest-api-key: ${KAKAO_REST_API_KEY:}
-      native-app-key: ${KAKAO_NATIVE_APP_KEY:}

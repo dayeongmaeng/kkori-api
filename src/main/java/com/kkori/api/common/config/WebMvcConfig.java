@@ -38,6 +38,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v1/devices/register",
                         "/api/v1/auth/oauth/login",
                         "/api/v1/auth/refresh",
+                        "/api/v1/auth/logout",
                         "/api/v1/photos/*/share"
                 );
     }

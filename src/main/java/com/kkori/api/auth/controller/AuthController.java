@@ -1,7 +1,9 @@
 package com.kkori.api.auth.controller;
 
+import com.kkori.api.auth.dto.request.LogoutRequest;
 import com.kkori.api.auth.dto.request.OAuthLoginRequest;
 import com.kkori.api.auth.dto.request.RefreshTokenRequest;
+import com.kkori.api.auth.dto.response.LogoutResponse;
 import com.kkori.api.auth.dto.response.OAuthLoginResponse;
 import com.kkori.api.auth.dto.response.RefreshTokenResponse;
 import com.kkori.api.auth.service.AuthService;
@@ -33,5 +35,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(
             @Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(authService.refresh(request)));
+    }
+
+    @Operation(summary = "로그아웃")
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<LogoutResponse>> logout(
+            @RequestBody(required = false) LogoutRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.logout(request)));
     }
 }

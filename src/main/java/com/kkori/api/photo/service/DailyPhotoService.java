@@ -164,7 +164,7 @@ public class DailyPhotoService {
         if (device != null && device.getUserId() != null && pet.getUserId() != null && pet.getUserId().equals(device.getUserId())) {
             return;
         }
-        if (device == null || pet.getDeviceId() == null || !pet.getDeviceId().equals(device.getId())) {
+        if (pet.getUserId() != null || device == null || pet.getDeviceId() == null || !pet.getDeviceId().equals(device.getId())) {
             throw new BusinessException(ErrorCode.PET_001);
         }
     }
