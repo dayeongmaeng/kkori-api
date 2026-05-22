@@ -59,6 +59,11 @@
 - logout API
 - 로그아웃된 refreshToken 해시 저장 및 refresh 차단
 - Kakao provider logout 일부 지원
+- SoftDeletableEntity 도입 및 User/Pet/Caregiver/DailyLog/DailyPhoto/DailyLogPhoto soft delete 적용
+- Pet 삭제 시 cascade soft delete (Pet → DailyLog → DailyLogPhoto / DailyPhoto)
+- S3 이미지 삭제를 AFTER_COMMIT 비동기 처리로 분리 (PetImageCleanupEvent, Listener, AsyncConfig)
+- Spring Security 도입 + CorsConfigurationSource 기반 CORS 일원화
+- OPTIONS preflight 허용, 401 응답에도 CORS 헤더 유지
 
 ## 인증 구현 상세
 
@@ -88,6 +93,18 @@
 - OAuth 로그인 성공 시 현재 deviceId의 기존 Pet 중 `userId`가 없는 데이터를 User에 연결한다.
 - Pet/Photo/Log 권한 검증은 userId 우선, 없으면 deviceId fallback을 사용한다.
 - DailyPhoto/DailyLog는 기존 `petId` 기반을 유지한다.
+
+## 반려동물 삭제 정책
+
+클라이언트는 `DELETE /api/v1/pets/{externalId}` 하나만 호출한다. API 내부에서:
+
+1. Pet soft delete (`deletedAt` 설정)
+2. 해당 Pet의 DailyLog soft delete
+3. DailyLog의 DailyLogPhoto soft delete
+4. 해당 Pet의 DailyPhoto soft delete
+5. 트랜잭션 커밋 후 `PetImageCleanupEvent` 발행 → `PetImageCleanupListener`에서 비동기로 S3 이미지 실제 삭제
+
+응답: 204 No Content.
 
 ## Pet 프로필 상태
 
@@ -223,13 +240,13 @@ npx expo start -c
 
 ## 다음 작업 후보
 
-1. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-2. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-3. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-4. 8080 외부 포트 차단 여부 운영 환경에서 확인
-5. 실제 Google/Kakao OAuth 실기기 로그인 QA
-6. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-7. 프로필탭 API/클라이언트 QA
+1. 반려동물 삭제 클라이언트 연동 (`DELETE /api/v1/pets/{externalId}` → 프로필 탭 삭제 버튼 + 로컬 캐시 정리)
+2. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+3. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+4. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+5. 8080 외부 포트 차단 여부 운영 환경에서 확인
+6. 실제 Google/Kakao OAuth 실기기 로그인 QA
+7. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
 8. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 준비
 9. Phase F AI 리포트 설계
 

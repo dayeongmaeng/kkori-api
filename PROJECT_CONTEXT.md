@@ -63,6 +63,13 @@
   - 기록 사진 S3 업로드/조회/삭제
   - thumbnail/medium URL 저장
   - 공유 조회 API
+- ✅ Phase E+: soft delete + 반려동물 삭제 정책 완료
+  - SoftDeletableEntity 도입
+  - User/Pet/Caregiver/DailyLog/DailyPhoto/DailyLogPhoto soft delete 적용
+  - Pet 삭제 cascade soft delete
+  - S3 이미지 AFTER_COMMIT 비동기 삭제 (PetImageCleanupEvent/Listener/AsyncConfig)
+  - Spring Security 도입 + CorsConfigurationSource 기반 CORS 일원화
+  - localhost web ↔ api CORS 해결, 401 응답에도 CORS 헤더 유지
 - 🔄 Phase D: OAuth/JWT 인증 1차 구현 완료 + 운영/QA 진행
   - User 소유권 전환
   - Google/Kakao OAuth 검증
@@ -75,8 +82,9 @@
 ## 서버 데이터 모델
 
 BaseEntity 기반 `createdAt`, `updatedAt` 사용.
+SoftDeletableEntity: `deletedAt` 필드를 가진 공통 베이스 (BaseEntity 확장). soft delete 대상 엔티티는 이를 상속한다.
 
-- User
+- User — soft delete 적용
   - OAuth 전용 계정 소유자
   - `externalId`, `provider`, `providerUserId`, nullable email/nickname/profileImageUrl
   - `provider + providerUserId` unique
@@ -84,20 +92,21 @@ BaseEntity 기반 `createdAt`, `updatedAt` 사용.
   - 설치 기기/세션/푸시 보조 정보
   - `externalId`, `platform`, `userId nullable`
   - 기존 `X-Device-Id` 흐름 유지
-- Caregiver
+- Caregiver — soft delete 적용
   - 보호자
   - `deviceId`, name, role, color
-- Pet
+- Pet — soft delete 적용
   - `deviceId nullable`, `userId nullable`
   - name, species, gender, breed, birthDate, birthDateUnknown, adoptionDate, weightKg, neutered, medicalNotes, photoBase64
   - userId 우선, deviceId fallback
-- DailyPhoto
+  - 삭제 시 DailyLog → DailyLogPhoto, DailyPhoto cascade soft delete
+- DailyPhoto — soft delete 적용
   - `petId`, `caregiverId`, date, caption, mediumUrl, thumbnailUrl
   - unique(`petId`, `date`)
-- DailyLog
+- DailyLog — soft delete 적용
   - `petId`, `caregiverId`, date, meal, water, walkMinutes, pooCondition, urineColor, condition, weightKg, memo
   - unique(`petId`, `date`)
-- DailyLogPhoto
+- DailyLogPhoto — soft delete 적용
   - DailyLog별 최대 3장
   - `dailyLogId`, `petId`, `caregiverId`, date, mediumUrl, thumbnailUrl, sortOrder
 - RevokedRefreshToken
@@ -108,7 +117,8 @@ BaseEntity 기반 `createdAt`, `updatedAt` 사용.
 - `POST /api/v1/devices/register`
 - `GET /api/v1/devices/me`
 - `/api/v1/caregivers`
-- `/api/v1/pets`
+- `GET/POST/PUT /api/v1/pets`
+- `DELETE /api/v1/pets/{externalId}` — 204. cascade soft delete + S3 이미지 AFTER_COMMIT 비동기 삭제.
 - `/api/v1/photos`
 - `POST /api/v1/photos/{externalId}/upload`
 - `GET /api/v1/photos/{externalId}/share`
@@ -241,13 +251,13 @@ npx expo start -c
 
 ## 다음 작업 후보
 
-1. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-2. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-3. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-4. 8080 외부 포트 차단 여부 운영 환경에서 확인
-5. 실제 Google/Kakao OAuth 실기기 로그인 QA
-6. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-7. 프로필탭 API/클라이언트 QA
+1. 반려동물 삭제 클라이언트 연동 (`DELETE /api/v1/pets/{externalId}` → 프로필 탭 삭제 버튼)
+2. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+3. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+4. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+5. 8080 외부 포트 차단 여부 운영 환경에서 확인
+6. 실제 Google/Kakao OAuth 실기기 로그인 QA
+7. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
 8. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 준비
 
 ## 실행 명령
