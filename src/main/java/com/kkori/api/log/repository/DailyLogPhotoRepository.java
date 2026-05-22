@@ -10,4 +10,7 @@ public interface DailyLogPhotoRepository extends JpaRepository<DailyLogPhoto, Lo
     Optional<DailyLogPhoto> findByExternalId(String externalId);
     List<DailyLogPhoto> findByDailyLogIdOrderBySortOrderAscIdAsc(Long dailyLogId);
     void deleteByDailyLogId(Long dailyLogId);
+
+    Optional<DailyLogPhoto> findByExternalIdAndDeletedAtIsNull(String externalId);
+    List<DailyLogPhoto> findByDailyLogIdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(Long dailyLogId);
 }

@@ -15,4 +15,12 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     Optional<Pet> findByExternalIdAndDeviceId(String externalId, Long deviceId);
     Optional<Pet> findByExternalIdAndDeviceIdAndUserIdIsNull(String externalId, Long deviceId);
     Optional<Pet> findByExternalIdAndUserId(String externalId, Long userId);
+
+    Optional<Pet> findByExternalIdAndDeletedAtIsNull(String externalId);
+    List<Pet> findByDeviceIdAndDeletedAtIsNull(Long deviceId);
+    List<Pet> findByUserIdAndDeletedAtIsNull(Long userId);
+    List<Pet> findByDeviceIdAndUserIdIsNullAndDeletedAtIsNull(Long deviceId);
+    Optional<Pet> findByExternalIdAndDeviceIdAndDeletedAtIsNull(String externalId, Long deviceId);
+    Optional<Pet> findByExternalIdAndDeviceIdAndUserIdIsNullAndDeletedAtIsNull(String externalId, Long deviceId);
+    Optional<Pet> findByExternalIdAndUserIdAndDeletedAtIsNull(String externalId, Long userId);
 }

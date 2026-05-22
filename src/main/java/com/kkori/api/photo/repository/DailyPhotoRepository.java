@@ -12,4 +12,8 @@ public interface DailyPhotoRepository extends JpaRepository<DailyPhoto, Long> {
     boolean existsByExternalId(String externalId);
     List<DailyPhoto> findByPetId(Long petId);
     boolean existsByPetIdAndDate(Long petId, LocalDate date);
+
+    Optional<DailyPhoto> findByExternalIdAndDeletedAtIsNull(String externalId);
+    List<DailyPhoto> findByPetIdAndDeletedAtIsNull(Long petId);
+    boolean existsByPetIdAndDateAndDeletedAtIsNull(Long petId, LocalDate date);
 }

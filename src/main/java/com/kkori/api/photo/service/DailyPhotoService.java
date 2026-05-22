@@ -41,7 +41,7 @@ public class DailyPhotoService {
     @Transactional
     public DailyPhotoResponse create(String deviceExternalId, CreateDailyPhotoRequest request) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        Pet pet = petRepository.findByExternalId(request.petExternalId())
+        Pet pet = petRepository.findByExternalIdAndDeletedAtIsNull(request.petExternalId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         verifyPetOwnership(pet, device);
 
@@ -71,25 +71,25 @@ public class DailyPhotoService {
 
     public List<DailyPhotoResponse> findByPet(String deviceExternalId, String petExternalId) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        Pet pet = petRepository.findByExternalId(petExternalId)
+        Pet pet = petRepository.findByExternalIdAndDeletedAtIsNull(petExternalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         verifyPetOwnership(pet, device);
 
-        return dailyPhotoRepository.findByPetId(pet.getId()).stream()
+        return dailyPhotoRepository.findByPetIdAndDeletedAtIsNull(pet.getId()).stream()
                 .map(DailyPhotoResponse::from)
                 .toList();
     }
 
     public DailyPhotoResponse findByExternalId(String deviceExternalId, String externalId) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyPhoto photo = dailyPhotoRepository.findByExternalId(externalId)
+        DailyPhoto photo = dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         verifyPetOwnershipById(photo.getPetId(), device);
         return DailyPhotoResponse.from(photo);
     }
 
     public DailyPhotoShareResponse findShareByExternalId(String externalId) {
-        DailyPhoto photo = dailyPhotoRepository.findByExternalId(externalId)
+        DailyPhoto photo = dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         Pet pet = petRepository.findById(photo.getPetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
@@ -99,7 +99,7 @@ public class DailyPhotoService {
     @Transactional
     public DailyPhotoResponse update(String deviceExternalId, String externalId, UpdateDailyPhotoRequest request) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyPhoto photo = dailyPhotoRepository.findByExternalId(externalId)
+        DailyPhoto photo = dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         verifyPetOwnershipById(photo.getPetId(), device);
         photo.update(request.caption());
@@ -110,7 +110,7 @@ public class DailyPhotoService {
     public PhotoUploadResponse uploadPhotos(String deviceExternalId, String externalId,
                                             MultipartFile medium, MultipartFile thumbnail) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyPhoto photo = dailyPhotoRepository.findByExternalId(externalId)
+        DailyPhoto photo = dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         verifyPetOwnershipById(photo.getPetId(), device);
 
@@ -128,7 +128,7 @@ public class DailyPhotoService {
     @Transactional
     public void delete(String deviceExternalId, String externalId) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyPhoto photo = dailyPhotoRepository.findByExternalId(externalId)
+        DailyPhoto photo = dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         verifyPetOwnershipById(photo.getPetId(), device);
 

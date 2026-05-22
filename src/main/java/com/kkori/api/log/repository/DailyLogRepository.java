@@ -12,4 +12,8 @@ public interface DailyLogRepository extends JpaRepository<DailyLog, Long> {
     boolean existsByExternalId(String externalId);
     List<DailyLog> findByPetId(Long petId);
     boolean existsByPetIdAndDate(Long petId, LocalDate date);
+
+    Optional<DailyLog> findByExternalIdAndDeletedAtIsNull(String externalId);
+    List<DailyLog> findByPetIdAndDeletedAtIsNull(Long petId);
+    boolean existsByPetIdAndDateAndDeletedAtIsNull(Long petId, LocalDate date);
 }

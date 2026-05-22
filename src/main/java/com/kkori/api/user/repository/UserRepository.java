@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByProviderAndProviderUserId(OAuthProvider provider, String providerUserId);
+    Optional<User> findByProviderAndProviderUserIdAndDeletedAtIsNull(OAuthProvider provider, String providerUserId);
 }

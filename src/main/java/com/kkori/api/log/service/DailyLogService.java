@@ -45,7 +45,7 @@ public class DailyLogService {
     @Transactional
     public DailyLogResponse create(String deviceExternalId, CreateDailyLogRequest request) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        Pet pet = petRepository.findByExternalId(request.petExternalId())
+        Pet pet = petRepository.findByExternalIdAndDeletedAtIsNull(request.petExternalId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         verifyPetOwnership(pet, device);
 
@@ -82,18 +82,18 @@ public class DailyLogService {
 
     public List<DailyLogResponse> findByPet(String deviceExternalId, String petExternalId) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        Pet pet = petRepository.findByExternalId(petExternalId)
+        Pet pet = petRepository.findByExternalIdAndDeletedAtIsNull(petExternalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         verifyPetOwnership(pet, device);
 
-        return dailyLogRepository.findByPetId(pet.getId()).stream()
+        return dailyLogRepository.findByPetIdAndDeletedAtIsNull(pet.getId()).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     public DailyLogResponse findByExternalId(String deviceExternalId, String externalId) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyLog log = dailyLogRepository.findByExternalId(externalId)
+        DailyLog log = dailyLogRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
         verifyPetOwnershipById(log.getPetId(), device);
         return toResponse(log);
@@ -102,7 +102,7 @@ public class DailyLogService {
     @Transactional
     public DailyLogResponse update(String deviceExternalId, String externalId, UpdateDailyLogRequest request) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyLog log = dailyLogRepository.findByExternalId(externalId)
+        DailyLog log = dailyLogRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
         verifyPetOwnershipById(log.getPetId(), device);
         log.update(request.meal(), request.water(), request.walkMinutes(),
@@ -115,11 +115,11 @@ public class DailyLogService {
     public DailyLogPhotoResponse uploadPhoto(String deviceExternalId, String externalId,
                                              MultipartFile medium, MultipartFile thumbnail) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyLog log = dailyLogRepository.findByExternalId(externalId)
+        DailyLog log = dailyLogRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
         verifyPetOwnershipById(log.getPetId(), device);
 
-        List<DailyLogPhoto> currentPhotos = dailyLogPhotoRepository.findByDailyLogIdOrderBySortOrderAscIdAsc(log.getId());
+        List<DailyLogPhoto> currentPhotos = dailyLogPhotoRepository.findByDailyLogIdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(log.getId());
         if (currentPhotos.size() >= MAX_PHOTOS_PER_LOG) {
             throw new BusinessException(ErrorCode.LOG_PHOTO_002);
         }
@@ -147,11 +147,11 @@ public class DailyLogService {
     @Transactional
     public void deletePhoto(String deviceExternalId, String externalId, String photoExternalId) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyLog log = dailyLogRepository.findByExternalId(externalId)
+        DailyLog log = dailyLogRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
         verifyPetOwnershipById(log.getPetId(), device);
 
-        DailyLogPhoto photo = dailyLogPhotoRepository.findByExternalId(photoExternalId)
+        DailyLogPhoto photo = dailyLogPhotoRepository.findByExternalIdAndDeletedAtIsNull(photoExternalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_PHOTO_001));
         if (!photo.getDailyLogId().equals(log.getId())) {
             throw new BusinessException(ErrorCode.LOG_PHOTO_001);
@@ -166,13 +166,13 @@ public class DailyLogService {
     @Transactional
     public void delete(String deviceExternalId, String externalId) {
         Device device = resolveDeviceForRequest(deviceExternalId);
-        DailyLog log = dailyLogRepository.findByExternalId(externalId)
+        DailyLog log = dailyLogRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOG_001));
         verifyPetOwnershipById(log.getPetId(), device);
 
         Pet pet = petRepository.findById(log.getPetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-        dailyLogPhotoRepository.findByDailyLogIdOrderBySortOrderAscIdAsc(log.getId())
+        dailyLogPhotoRepository.findByDailyLogIdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(log.getId())
                 .forEach(photo -> s3PhotoStorage.delete(pet.getExternalId(), photo.getExternalId()));
         dailyLogPhotoRepository.deleteByDailyLogId(log.getId());
         dailyLogRepository.delete(log);
@@ -180,7 +180,7 @@ public class DailyLogService {
 
     private DailyLogResponse toResponse(DailyLog log) {
         List<DailyLogPhotoResponse> photos = dailyLogPhotoRepository
-                .findByDailyLogIdOrderBySortOrderAscIdAsc(log.getId())
+                .findByDailyLogIdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(log.getId())
                 .stream()
                 .map(DailyLogPhotoResponse::from)
                 .toList();

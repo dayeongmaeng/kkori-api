@@ -1,6 +1,6 @@
 package com.kkori.api.pet.entity;
 
-import com.kkori.api.common.entity.BaseEntity;
+import com.kkori.api.common.entity.SoftDeletableEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Entity
 @Table(name = "pet")
-public class Pet extends BaseEntity {
+public class Pet extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

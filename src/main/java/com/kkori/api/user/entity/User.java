@@ -1,6 +1,6 @@
 package com.kkori.api.user.entity;
 
-import com.kkori.api.common.entity.BaseEntity;
+import com.kkori.api.common.entity.SoftDeletableEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
                 )
         }
 )
-public class User extends BaseEntity {
+public class User extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

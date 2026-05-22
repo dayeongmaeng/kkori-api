@@ -6,15 +6,22 @@ import com.kkori.api.common.exception.BusinessException;
 import com.kkori.api.common.exception.ErrorCode;
 import com.kkori.api.device.entity.Device;
 import com.kkori.api.device.repository.DeviceRepository;
+import com.kkori.api.log.entity.DailyLog;
+import com.kkori.api.log.repository.DailyLogPhotoRepository;
+import com.kkori.api.log.repository.DailyLogRepository;
 import com.kkori.api.pet.dto.request.CreatePetRequest;
 import com.kkori.api.pet.dto.request.UpdatePetRequest;
 import com.kkori.api.pet.dto.response.PetResponse;
 import com.kkori.api.pet.entity.Pet;
+import com.kkori.api.pet.event.PetImageCleanupEvent;
 import com.kkori.api.pet.repository.PetRepository;
+import com.kkori.api.photo.repository.DailyPhotoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,6 +33,10 @@ public class PetService {
 
     private final PetRepository petRepository;
     private final DeviceRepository deviceRepository;
+    private final DailyLogRepository dailyLogRepository;
+    private final DailyLogPhotoRepository dailyLogPhotoRepository;
+    private final DailyPhotoRepository dailyPhotoRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public PetResponse create(String deviceExternalId, CreatePetRequest request) {
@@ -63,17 +74,17 @@ public class PetService {
     public List<PetResponse> findAll(String deviceExternalId) {
         Optional<AuthenticatedUser> currentUser = AuthContext.currentUser();
         if (currentUser.isPresent()) {
-            return petRepository.findByUserId(currentUser.get().userId()).stream()
+            return petRepository.findByUserIdAndDeletedAtIsNull(currentUser.get().userId()).stream()
                     .map(PetResponse::from)
                     .toList();
         }
         Device device = requireDevice(deviceExternalId);
         if (device.getUserId() != null) {
-            return petRepository.findByUserId(device.getUserId()).stream()
+            return petRepository.findByUserIdAndDeletedAtIsNull(device.getUserId()).stream()
                     .map(PetResponse::from)
                     .toList();
         }
-        return petRepository.findByDeviceId(device.getId()).stream()
+        return petRepository.findByDeviceIdAndDeletedAtIsNull(device.getId()).stream()
                 .map(PetResponse::from)
                 .toList();
     }
@@ -101,25 +112,49 @@ public class PetService {
         Device device = resolveDevice(deviceExternalId).orElse(null);
         Pet pet = findOwnedPet(externalId, device)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-        petRepository.delete(pet);
+
+        List<PetImageCleanupEvent.ImageKey> imageKeys = new ArrayList<>();
+
+        List<DailyLog> logs = dailyLogRepository.findByPetIdAndDeletedAtIsNull(pet.getId());
+        for (DailyLog log : logs) {
+            dailyLogPhotoRepository.findByDailyLogIdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(log.getId())
+                    .forEach(photo -> {
+                        photo.softDelete();
+                        imageKeys.add(new PetImageCleanupEvent.ImageKey(pet.getExternalId(), photo.getExternalId()));
+                    });
+            log.softDelete();
+        }
+        dailyPhotoRepository.findByPetIdAndDeletedAtIsNull(pet.getId())
+                .forEach(photo -> {
+                    photo.softDelete();
+                    if (photo.getMediumUrl() != null) {
+                        imageKeys.add(new PetImageCleanupEvent.ImageKey(pet.getExternalId(), photo.getExternalId()));
+                    }
+                });
+
+        pet.softDelete();
+
+        if (!imageKeys.isEmpty()) {
+            eventPublisher.publishEvent(new PetImageCleanupEvent(imageKeys));
+        }
     }
 
     private Optional<Pet> findOwnedPet(String externalId, Device device) {
         Optional<AuthenticatedUser> currentUser = AuthContext.currentUser();
         if (currentUser.isPresent()) {
-            return petRepository.findByExternalIdAndUserId(externalId, currentUser.get().userId())
+            return petRepository.findByExternalIdAndUserIdAndDeletedAtIsNull(externalId, currentUser.get().userId())
                     .or(() -> device == null
                             ? Optional.empty()
-                            : petRepository.findByExternalIdAndDeviceIdAndUserIdIsNull(externalId, device.getId()));
+                            : petRepository.findByExternalIdAndDeviceIdAndUserIdIsNullAndDeletedAtIsNull(externalId, device.getId()));
         }
         if (device != null && device.getUserId() != null) {
-            return petRepository.findByExternalIdAndUserId(externalId, device.getUserId())
-                    .or(() -> petRepository.findByExternalIdAndDeviceId(externalId, device.getId()));
+            return petRepository.findByExternalIdAndUserIdAndDeletedAtIsNull(externalId, device.getUserId())
+                    .or(() -> petRepository.findByExternalIdAndDeviceIdAndDeletedAtIsNull(externalId, device.getId()));
         }
         if (device == null) {
             return Optional.empty();
         }
-        return petRepository.findByExternalIdAndDeviceId(externalId, device.getId());
+        return petRepository.findByExternalIdAndDeviceIdAndDeletedAtIsNull(externalId, device.getId());
     }
 
     private Device requireDevice(String deviceExternalId) {

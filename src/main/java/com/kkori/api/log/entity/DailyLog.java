@@ -1,6 +1,6 @@
 package com.kkori.api.log.entity;
 
-import com.kkori.api.common.entity.BaseEntity;
+import com.kkori.api.common.entity.SoftDeletableEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +19,7 @@ import java.time.LocalDate;
                 columnNames = {"pet_id", "date"}
         )
 )
-public class DailyLog extends BaseEntity {
+public class DailyLog extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

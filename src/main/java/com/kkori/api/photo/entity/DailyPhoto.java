@@ -1,6 +1,6 @@
 package com.kkori.api.photo.entity;
 
-import com.kkori.api.common.entity.BaseEntity;
+import com.kkori.api.common.entity.SoftDeletableEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +18,7 @@ import java.time.LocalDate;
                 columnNames = {"pet_id", "date"}
         )
 )
-public class DailyPhoto extends BaseEntity {
+public class DailyPhoto extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -10,4 +10,8 @@ public interface CaregiverRepository extends JpaRepository<Caregiver, Long> {
     Optional<Caregiver> findByExternalId(String externalId);
     List<Caregiver> findByDeviceId(Long deviceId);
     boolean existsByExternalIdAndDeviceId(String externalId, Long deviceId);
+
+    Optional<Caregiver> findByExternalIdAndDeletedAtIsNull(String externalId);
+    List<Caregiver> findByDeviceIdAndDeletedAtIsNull(Long deviceId);
+    boolean existsByExternalIdAndDeviceIdAndDeletedAtIsNull(String externalId, Long deviceId);
 }

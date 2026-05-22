@@ -1,6 +1,6 @@
 package com.kkori.api.caregiver.entity;
 
-import com.kkori.api.common.entity.BaseEntity;
+import com.kkori.api.common.entity.SoftDeletableEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
         name = "caregiver",
         indexes = @Index(name = "idx_caregiver_device_id", columnList = "device_id")
 )
-public class Caregiver extends BaseEntity {
+public class Caregiver extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
