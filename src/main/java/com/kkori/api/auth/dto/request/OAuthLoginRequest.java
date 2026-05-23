@@ -10,7 +10,11 @@ public record OAuthLoginRequest(
         String accessToken,
         String code,
         String redirectUri,
-        @NotBlank String deviceExternalId
+        @NotBlank String deviceExternalId,
+        // Google OAuth token storage용 선택 필드.
+        // 클라이언트가 전달하지 않아도 로그인은 정상 처리된다.
+        String googleOAuthAccessToken,
+        String googleRefreshToken
 ) {
     public String token() {
         if (idToken != null && !idToken.isBlank()) {

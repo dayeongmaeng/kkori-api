@@ -1,7 +1,7 @@
 # 꼬리 API 개발 로드맵
 
 기준 문서: `apiserver.md`
-마지막 업데이트: 2026-05-22
+마지막 업데이트: 2026-05-23
 
 ## Phase A: 로컬 백엔드 구축
 
@@ -158,6 +158,40 @@
   - local/dev/prod 모두 `JWT_SECRET` 설정 필요
   - 운영 `GOOGLE_CLIENT_ID`, Kakao 키 확인 필요
   - 실제 Google/Kakao 실기기 로그인 QA 필요
+- [x] D-13: 회원 탈퇴 API 서버 구현
+  - `DELETE /api/v1/users/me` — JWT 인증 필수, 204 응답
+  - User 개인정보 익명화 + status=WITHDRAWN + softDelete()
+  - 소유 Pet cascade soft delete (PetService.deleteAllForUser() 재사용)
+  - S3 이미지 비동기 삭제 (기존 PetImageCleanupEvent/Listener 재사용)
+  - OAuth 연결 해제 인터페이스 + 스텁 구현 (TODO: 실제 HTTP 호출)
+  - 탈퇴 후 refresh 차단 (AuthService.refresh()에 isWithdrawn 가드 추가)
+  - 탈퇴 후 logout NPE 수정 (provider null 가드 추가)
+  - 재가입: provider+providerUserId null 처리로 동일 계정 재가입 허용
+- [ ] D-14: 회원 탈퇴 DB 마이그레이션 (운영 배포 전 필수)
+  - `ALTER TABLE users ALTER COLUMN provider DROP NOT NULL`
+  - `ALTER TABLE users ALTER COLUMN provider_user_id DROP NOT NULL`
+  - `UPDATE users SET status = 'ACTIVE' WHERE status IS NULL`
+  - `ALTER TABLE users ALTER COLUMN status SET NOT NULL`
+  - 스크립트: `src/main/resources/db/user-withdrawal-migration.sql`
+- [x] D-15: 회원 탈퇴 클라이언트 UI
+  - 설정 탭 탈퇴 버튼
+  - 안내 화면: 복구 불가, 소셜 계정 자체는 유지됨 안내
+  - Web/native 확인 모달 대응
+  - `DELETE /api/v1/users/me` 호출
+  - 성공(204): 로컬 인증 정보 삭제 후 로그인 화면 이동
+- [x] D-16: OAuth 연결 해제 실제 구현
+  - Kakao unlink: Admin Key 기반 구현 완료 (`KakaoOAuthDisconnectService`)
+  - Google revoke: `UserOAuthToken` 기반 구조 구현 완료 (`GoogleOAuthDisconnectService`)
+- [x] D-17: Google OAuth token 암호화 저장 구조
+  - `UserOAuthToken` 엔티티 (`user_oauth_token` 테이블)
+  - AES-256-GCM 암호화
+  - revoke 성공 시 `revokedAt` 기록
+  - 클라이언트에서 Google access token 전달 구조 추가
+- [ ] D-18: 운영 DB 마이그레이션 (배포 전 필수)
+  - `user-withdrawal-migration.sql` 운영 적용
+  - `user_oauth_token` 테이블 DDL 운영 적용 여부 확인
+- [ ] D-19: Google revoke 실기기 QA
+  - UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인
 
 ## Phase E: 사진 클라우드 저장
 
@@ -251,6 +285,13 @@
 - [x] OAuth 전용 User 소유권 전환 1차 구현 완료
 - [x] JWT 인증 골격 및 refresh 재발급 API 구현 완료
 - [x] 로그아웃 API와 refreshToken 해시 폐기 구현
+- [x] 회원 탈퇴 API 서버 구현 완료 (D-13)
+- [ ] **회원 탈퇴 DB 마이그레이션 (D-18)** — 배포 전 필수
+- [x] 회원 탈퇴 클라이언트 UI (D-15)
+- [x] Kakao unlink 실제 구현 (D-16)
+- [x] Google revoke 구조 구현 (D-16)
+- [x] UserOAuthToken AES-256-GCM 암호화 저장 (D-17)
+- [ ] Google revoke 실기기 QA (D-19)
 - [ ] 8080 외부 포트 닫기 확인
 - [ ] 운영 OAuth/JWT 환경변수 반영 확인
 - [ ] Google/Kakao 실기기 로그인 QA
@@ -258,12 +299,12 @@
 
 ## 다음 작업 후보
 
-1. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-2. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-3. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-4. 8080 외부 포트 차단 여부 운영 환경에서 확인
-5. 실제 Google/Kakao OAuth 실기기 로그인 QA
-6. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-7. 프로필탭 API/클라이언트 QA
-8. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 준비
+1. **[배포 전 필수]** 운영 DB 마이그레이션 (D-18) — `user-withdrawal-migration.sql` + `user_oauth_token` DDL 수동 실행
+2. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+3. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+4. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+5. 8080 외부 포트 차단 여부 운영 환경에서 확인
+6. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA (D-19)
+7. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
+8. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
 9. Phase F AI 리포트 설계

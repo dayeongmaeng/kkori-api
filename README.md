@@ -71,6 +71,7 @@ docker compose logs -f api
 | `POST` | `/api/v1/auth/oauth/login` | Google/Kakao OAuth 로그인 |
 | `POST` | `/api/v1/auth/refresh` | accessToken 재발급 |
 | `POST` | `/api/v1/auth/logout` | 로그아웃 |
+| `DELETE` | `/api/v1/users/me` | 회원 탈퇴 (JWT 필수) |
 | `POST` | `/api/v1/devices/register` | 기기 등록 |
 | `GET` | `/api/v1/devices/me` | 내 기기 조회 |
 | `GET/POST/PATCH/DELETE` | `/api/v1/pets` | 반려동물 CRUD |
@@ -89,6 +90,16 @@ API 문서: `/swagger-ui.html`
 - 로그인 성공 시 JWT accessToken / refreshToken 발급.
 - 요청 헤더: `Authorization: Bearer {accessToken}`
 - 기기 식별 헤더: `X-Device-Id`
+
+## 회원 탈퇴
+
+`DELETE /api/v1/users/me` — JWT 인증 필수, 204 반환.
+
+- 소유 반려동물 기록/사진 cascade soft delete
+- 개인정보 익명화 (email, provider 등 null 처리)
+- 탈퇴 후 동일 Google/Kakao 계정으로 재가입 가능
+
+> **배포 전 필수**: `src/main/resources/db/user-withdrawal-migration.sql`을 운영 DB에 수동 실행해야 합니다. (`ddl-auto=update`는 NOT NULL 제약 자동 제거 불가)
 
 ## 관련 저장소
 

@@ -112,7 +112,18 @@ public class PetService {
         Device device = resolveDevice(deviceExternalId).orElse(null);
         Pet pet = findOwnedPet(externalId, device)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
+        cascadeSoftDelete(pet);
+    }
 
+    @Transactional
+    public void deleteAllForUser(Long userId) {
+        List<Pet> pets = petRepository.findByUserIdAndDeletedAtIsNull(userId);
+        for (Pet pet : pets) {
+            cascadeSoftDelete(pet);
+        }
+    }
+
+    private void cascadeSoftDelete(Pet pet) {
         List<PetImageCleanupEvent.ImageKey> imageKeys = new ArrayList<>();
 
         List<DailyLog> logs = dailyLogRepository.findByPetIdAndDeletedAtIsNull(pet.getId());

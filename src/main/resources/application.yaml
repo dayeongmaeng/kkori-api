@@ -50,3 +50,6 @@ auth:
       client-id: ${GOOGLE_CLIENT_ID:}
     kakao:
       rest-api-key: ${KAKAO_REST_API_KEY:}
+      admin-key: ${KAKAO_ADMIN_KEY:}
+    token:
+      encryption-key: ${OAUTH_TOKEN_ENCRYPTION_KEY:}

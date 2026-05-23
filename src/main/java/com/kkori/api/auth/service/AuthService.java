@@ -9,18 +9,22 @@ import com.kkori.api.auth.dto.response.LogoutResponse;
 import com.kkori.api.auth.dto.response.OAuthLoginResponse;
 import com.kkori.api.auth.dto.response.RefreshTokenResponse;
 import com.kkori.api.auth.entity.RevokedRefreshToken;
+import com.kkori.api.auth.entity.UserOAuthToken;
 import com.kkori.api.auth.jwt.JwtClaims;
 import com.kkori.api.auth.jwt.JwtTokenIssuer;
 import com.kkori.api.auth.jwt.JwtTokenVerifier;
+import com.kkori.api.auth.oauth.OAuthTokenEncryptor;
 import com.kkori.api.auth.oauth.OAuthUserInfo;
 import com.kkori.api.auth.oauth.OAuthVerifierResolver;
 import com.kkori.api.auth.repository.RevokedRefreshTokenRepository;
+import com.kkori.api.auth.repository.UserOAuthTokenRepository;
 import com.kkori.api.common.exception.BusinessException;
 import com.kkori.api.common.exception.ErrorCode;
 import com.kkori.api.device.entity.Device;
 import com.kkori.api.device.repository.DeviceRepository;
 import com.kkori.api.pet.repository.PetRepository;
 import com.kkori.api.user.dto.response.UserResponse;
+import com.kkori.api.user.entity.OAuthProvider;
 import com.kkori.api.user.entity.User;
 import com.kkori.api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +51,8 @@ public class AuthService {
     private final JwtTokenIssuer jwtTokenIssuer;
     private final JwtTokenVerifier jwtTokenVerifier;
     private final RevokedRefreshTokenRepository revokedRefreshTokenRepository;
+    private final UserOAuthTokenRepository userOAuthTokenRepository;
+    private final OAuthTokenEncryptor oAuthTokenEncryptor;
     private final List<ProviderLogoutClient> providerLogoutClients;
 
     @Transactional
@@ -64,6 +70,8 @@ public class AuthService {
         petRepository.findByDeviceIdAndUserIdIsNull(device.getId())
                 .forEach(pet -> pet.connectUser(user.getId()));
 
+        storeGoogleOAuthTokenIfPresent(user, request);
+
         return new OAuthLoginResponse(
                 jwtTokenIssuer.issueAccessToken(user),
                 jwtTokenIssuer.issueRefreshToken(user),
@@ -79,6 +87,10 @@ public class AuthService {
         JwtClaims claims = jwtTokenVerifier.verifyRefreshToken(request.refreshToken());
         User user = userRepository.findById(claims.userId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_001));
+
+        if (user.isDeleted() || user.isWithdrawn()) {
+            throw new BusinessException(ErrorCode.AUTH_003);
+        }
 
         // TODO: Add refresh token rotation and server-side refresh token revocation.
         return new RefreshTokenResponse(jwtTokenIssuer.issueAccessToken(user));
@@ -112,6 +124,49 @@ public class AuthService {
                 providerLogoutResult.attempted(),
                 providerLogoutResult.success()
         );
+    }
+
+    private void storeGoogleOAuthTokenIfPresent(User user, OAuthLoginRequest request) {
+        if (request.provider() != OAuthProvider.GOOGLE) {
+            return;
+        }
+
+        log.info("[OAuth][Google] storeGoogleOAuthTokenIfPresent called: userId={}, hasGoogleOAuthAccessToken={}, hasGoogleRefreshToken={}",
+                user.getId(),
+                !isBlank(request.googleOAuthAccessToken()),
+                !isBlank(request.googleRefreshToken()));
+
+        if (oAuthTokenEncryptor.isDisabled()) {
+            log.warn("[OAuth][Google] encryptor disabled — skipping token storage: userId={}", user.getId());
+            return;
+        }
+
+        boolean hasAccess = !isBlank(request.googleOAuthAccessToken());
+        boolean hasRefresh = !isBlank(request.googleRefreshToken());
+        if (!hasAccess && !hasRefresh) {
+            log.info("[OAuth][Google] no token provided — skipping token storage: userId={}", user.getId());
+            return;
+        }
+
+        try {
+            String encryptedAccess = hasAccess ? oAuthTokenEncryptor.encrypt(request.googleOAuthAccessToken()) : null;
+            String encryptedRefresh = hasRefresh ? oAuthTokenEncryptor.encrypt(request.googleRefreshToken()) : null;
+
+            userOAuthTokenRepository.findByUserIdAndProvider(user.getId(), OAuthProvider.GOOGLE)
+                    .ifPresentOrElse(
+                            existing -> existing.update(encryptedAccess, encryptedRefresh, null, null),
+                            () -> userOAuthTokenRepository.save(UserOAuthToken.builder()
+                                    .userId(user.getId())
+                                    .provider(OAuthProvider.GOOGLE)
+                                    .encryptedAccessToken(encryptedAccess)
+                                    .encryptedRefreshToken(encryptedRefresh)
+                                    .build())
+                    );
+
+            log.info("[OAuth][Google] token stored: userId={}", user.getId());
+        } catch (Exception e) {
+            log.error("[OAuth][Google] token storage failed, login continues: userId={}", user.getId(), e);
+        }
     }
 
     private User updateExistingUser(User user, OAuthUserInfo userInfo) {
@@ -158,6 +213,9 @@ public class AuthService {
     }
 
     private ProviderLogoutResult logoutProviderIfPossible(User user, LogoutRequest request) {
+        if (user.getProvider() == null) {
+            return new ProviderLogoutResult(false, false);
+        }
         String providerAccessToken = switch (user.getProvider()) {
             case KAKAO -> request.kakaoAccessToken();
             case GOOGLE, APPLE -> null;

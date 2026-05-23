@@ -16,6 +16,7 @@ public enum ErrorCode {
     AUTH_003(HttpStatus.UNAUTHORIZED, "유효하지 않은 인증 토큰입니다."),
     AUTH_004(HttpStatus.UNAUTHORIZED, "인증 토큰이 만료되었습니다."),
     USER_001(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
+    USER_002(HttpStatus.CONFLICT, "이미 탈퇴한 사용자입니다."),
     PET_001(HttpStatus.NOT_FOUND, "반려동물을 찾을 수 없습니다."),
     CAREGIVER_001(HttpStatus.NOT_FOUND, "보호자를 찾을 수 없습니다."),
     CAREGIVER_002(HttpStatus.CONFLICT, "이미 존재하는 보호자 ID입니다."),

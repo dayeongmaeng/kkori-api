@@ -27,11 +27,14 @@ public class User extends SoftDeletableEntity {
     @Column(name = "external_id", nullable = false, unique = true)
     private String externalId;
 
+    // nullable: provider/providerUserId are nulled out on withdrawal for re-registration support.
+    // PostgreSQL treats (NULL, NULL) as distinct in unique constraints, so re-registration is safe.
+    // DB migration required: ALTER TABLE users ALTER COLUMN provider DROP NOT NULL;
+    //                        ALTER TABLE users ALTER COLUMN provider_user_id DROP NOT NULL;
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private OAuthProvider provider;
 
-    @Column(name = "provider_user_id", nullable = false)
+    @Column(name = "provider_user_id")
     private String providerUserId;
 
     private String email;
@@ -40,6 +43,10 @@ public class User extends SoftDeletableEntity {
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status = UserStatus.ACTIVE;
 
     @Builder
     public User(String externalId, OAuthProvider provider, String providerUserId,
@@ -50,11 +57,26 @@ public class User extends SoftDeletableEntity {
         this.email = email;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
+        this.status = UserStatus.ACTIVE;
     }
 
     public void updateProfile(String email, String nickname, String profileImageUrl) {
         this.email = email;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public void withdraw() {
+        this.status = UserStatus.WITHDRAWN;
+        this.email = null;
+        this.nickname = "탈퇴한 사용자";
+        this.profileImageUrl = null;
+        this.provider = null;
+        this.providerUserId = null;
+        softDelete();
+    }
+
+    public boolean isWithdrawn() {
+        return UserStatus.WITHDRAWN.equals(this.status);
     }
 }

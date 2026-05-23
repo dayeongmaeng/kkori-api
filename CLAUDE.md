@@ -3,7 +3,7 @@
 반려동물 일상 기록 앱 "꼬리"의 백엔드 서버.
 
 기준 문서: `apiserver.md`
-마지막 갱신: 2026-05-22
+마지막 갱신: 2026-05-23
 
 ## 프로젝트 컨텍스트
 
@@ -62,6 +62,7 @@
 - Phase B: React Native 클라이언트 연동 완료
 - Phase C: Lightsail 배포 + 도메인 + HTTPS 적용 완료
 - Phase D: OAuth/JWT 인증 1차 구현 완료 + 운영/QA 진행
+- Phase D+: 회원 탈퇴 API 서버 구현 완료 + 클라이언트 UI 연동 완료
 - Phase E: S3 사진 업로드 및 후속 UX 안정화 완료
 - Phase F: AI 리포트 미진행
 
@@ -96,12 +97,16 @@
 
 - **SoftDeletableEntity**: `deletedAt` 필드를 가진 공통 베이스. soft delete 대상 엔티티는 이를 상속한다.
 - **User**: OAuth 전용 계정 소유자 (`GOOGLE`, `KAKAO`, `APPLE`), `provider + providerUserId` unique. soft delete 적용.
+  - `status` 필드: `UserStatus.ACTIVE` / `UserStatus.WITHDRAWN`
+  - `withdraw()` 메서드: status=WITHDRAWN, deletedAt=now, email/nickname 익명화("탈퇴한 사용자"), provider/providerUserId/profileImageUrl null 처리
+  - 탈퇴 후 같은 OAuth 계정으로 재가입 가능 (provider+providerUserId 가 null 처리되므로 unique constraint 충돌 없음)
 - **Device**: 설치 기기/세션/푸시 보조 정보, `Device.userId`로 User 연결, 기존 `X-Device-Id` 흐름 유지
 - **Caregiver**: 보호자 (가족 공유 대비, 한 Device에 여러 Caregiver 가능). soft delete 적용.
 - **Pet**: 반려동물. `userId` nullable + 기존 `deviceId` fallback. soft delete 적용.
 - **DailyPhoto**: 하루 한 장 데일리 포토 (`petId + date` unique), caption, mediumUrl, thumbnailUrl. soft delete 적용.
 - **DailyLog**: 일일 건강 기록 (식사/물/산책/배변/소변/컨디션/체중/메모). soft delete 적용.
 - **DailyLogPhoto**: 기록탭 사진. DailyLog별 최대 3장, S3 medium/thumbnail URL 저장. soft delete 적용.
+- **UserOAuthToken**: Google OAuth access token 암호화 저장 (`user_oauth_token` 테이블). AES-256-GCM 암호화. revoke 성공 시 `revokedAt` 기록. Google revoke 시 사용.
 - **RevokedRefreshToken**: 로그아웃된 refreshToken 해시 저장
 
 ## Pet 프로필 상태
@@ -151,6 +156,7 @@
 - `POST /api/v1/auth/oauth/login`
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
+- `DELETE /api/v1/users/me` — 회원 탈퇴. JWT 인증 필수. 소유 Pet/기록/사진 cascade soft delete + S3 이미지 비동기 삭제 + 개인정보 익명화 + WITHDRAWN 처리. 응답: 204.
 
 ## 패키지 구조
 
@@ -158,7 +164,14 @@
 com.kkori.api
 ├── common         # 공통 응답, 예외, 설정 (AsyncConfig 포함)
 ├── auth           # OAuth 로그인, JWT, 로그아웃
-├── user           # OAuth 사용자
+│   └── oauth
+│       └── disconnect  # OAuthDisconnectService 인터페이스
+│                       # KakaoOAuthDisconnectService (Admin Key 기반 unlink 구현 완료)
+│                       # GoogleOAuthDisconnectService (UserOAuthToken 기반 revoke 구조 구현 완료)
+│                       # OAuthDisconnectListener (AFTER_COMMIT @Async)
+├── user           # OAuth 사용자, UserStatus, UserWithdrawalService, UserController
+│   ├── event      # UserWithdrawalEvent
+│   └── oauth      # UserOAuthToken (Google OAuth token AES-256-GCM 암호화 저장)
 ├── device         # 디바이스 관리
 ├── caregiver      # 보호자
 ├── pet            # 반려동물 (PetImageCleanupEvent, PetImageCleanupListener 포함)
@@ -301,13 +314,64 @@ npx expo start -c
 
 필요 시 `.expo`, `node_modules/.cache`, temp metro/haste-map 캐시를 삭제한다.
 
+## 회원 탈퇴 운영 정책
+
+### 배포 전 필수 DB 마이그레이션
+
+`ddl-auto: update`는 기존 컬럼의 NOT NULL 제약을 자동 제거하지 않는다.
+탈퇴 API 활성화 전 반드시 아래 SQL을 운영 DB에 수동 실행해야 한다.
+스크립트: `src/main/resources/db/user-withdrawal-migration.sql`
+
+```sql
+ALTER TABLE users ALTER COLUMN provider DROP NOT NULL;
+ALTER TABLE users ALTER COLUMN provider_user_id DROP NOT NULL;
+UPDATE users SET status = 'ACTIVE' WHERE status IS NULL;
+ALTER TABLE users ALTER COLUMN status SET NOT NULL;
+```
+
+이 마이그레이션 없이 탈퇴 API를 호출하면 `provider=null` 저장 시 DB constraint violation이 발생한다.
+
+### 인증 토큰 처리 정책
+
+- **access token**: 탈퇴 후에도 만료(최대 1시간)까지 유효할 수 있다. JWT 필터는 DB 상태를 조회하지 않는다. 허용 범위로 간주하며, 탈퇴 후 1시간 내 데이터 접근 가능성은 인지하고 운영한다.
+- **refresh token**: 탈퇴 사용자에게 즉시 차단된다. `AuthService.refresh()`에서 `user.isDeleted() || user.isWithdrawn()` 검사로 AUTH_003(401) 반환.
+- **재발급 불가**: refresh가 차단되므로 1시간 후 access token도 자연 만료된다.
+
+### 재가입 정책
+
+- 탈퇴 시 `provider`와 `providerUserId`를 null 처리하므로, 동일한 Google/Kakao 계정으로 재가입 가능하다.
+- PostgreSQL의 unique constraint는 `(NULL, NULL)` 행을 서로 독립으로 취급하므로 탈퇴 row가 재가입을 막지 않는다.
+- 재가입 시 신규 User row가 생성된다. 이전 탈퇴 이력(pet/기록/사진)은 복구되지 않는다.
+
+### OAuth 연결 해제
+
+- `OAuthDisconnectService` 인터페이스 + `KakaoOAuthDisconnectService`, `GoogleOAuthDisconnectService` 구현 완료.
+- Kakao unlink: Admin Key 기반 HTTP 호출 실제 구현 완료. 탈퇴 API 성패에 영향 없음.
+- Google revoke: `UserOAuthToken`에서 AES-256-GCM 복호화한 access token으로 revoke 호출 구조 구현 완료.
+  - Google OAuth access token은 로그인 시 `user_oauth_token` 테이블에 AES-256-GCM 암호화로 저장된다.
+  - revoke 성공 시 `revokedAt` 기록.
+- OAuth 해제는 AFTER_COMMIT 비동기 처리. 실패해도 탈퇴 결과에 영향 없음.
+- 해제 시도 결과는 `OAuthDisconnectListener` 로그로만 기록된다.
+
+### 클라이언트 회원 탈퇴 UI 구현 가이드
+
+- 탈퇴 버튼 전 안내 화면 표시:
+  - "탈퇴 시 반려동물 기록과 사진이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
+  - "소셜 계정(Google/Kakao) 자체는 삭제되지 않습니다."
+- 사용자 확인 후 `DELETE /api/v1/users/me` 호출 (Authorization 헤더 필수)
+- 성공(204) 시: 로컬 저장 인증 정보(accessToken, refreshToken, deviceId 관련 캐시) 삭제 후 로그인 화면으로 이동
+- 실패 시: "오류가 발생했습니다. 다시 시도해 주세요." 메시지 표시
+
 ## 다음 작업 후보
 
-1. 반려동물 삭제 클라이언트 연동 (`DELETE /api/v1/pets/{externalId}` → 프로필 탭 삭제 버튼)
-2. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-3. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-4. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-5. 8080 외부 포트 차단 여부 운영 환경에서 확인
-6. 실제 Google/Kakao OAuth 실기기 로그인 QA
-7. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-8. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 준비
+1. **[배포 전 필수]** 회원 탈퇴 DB 마이그레이션 — `user-withdrawal-migration.sql` 운영 DB 수동 실행
+2. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — `ddl-auto: update`로 자동 생성되지 않을 경우 수동 DDL 실행 필요
+3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+5. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+6. 8080 외부 포트 차단 여부 운영 환경에서 확인
+7. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
+8. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
+9. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+10. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
+11. Phase F AI 리포트 설계
