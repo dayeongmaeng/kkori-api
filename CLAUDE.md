@@ -3,7 +3,7 @@
 반려동물 일상 기록 앱 "꼬리"의 백엔드 서버.
 
 기준 문서: `apiserver.md`
-마지막 갱신: 2026-05-23
+마지막 갱신: 2026-05-25
 
 ## 프로젝트 컨텍스트
 
@@ -366,12 +366,13 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 
 1. **[배포 전 필수]** 회원 탈퇴 DB 마이그레이션 — `user-withdrawal-migration.sql` 운영 DB 수동 실행
 2. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — `ddl-auto: update`로 자동 생성되지 않을 경우 수동 DDL 실행 필요
-3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-5. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-6. 8080 외부 포트 차단 여부 운영 환경에서 확인
-7. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
-8. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-9. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-10. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
-11. Phase F AI 리포트 설계
+3. 반려동물 삭제 버튼 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
+4. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+5. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+6. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+7. 8080 외부 포트 차단 여부 운영 환경에서 확인
+8. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
+9. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
+10. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+11. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
+12. Phase F AI 리포트 설계

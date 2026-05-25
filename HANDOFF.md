@@ -3,7 +3,7 @@
 세션 종료 또는 컨텍스트 전환 시 다음 세션에서 바로 이어받기 위한 최신 상태 기록.
 
 기준 문서: `apiserver.md`
-마지막 업데이트: 2026-05-23
+마지막 업데이트: 2026-05-25
 
 ## 현재 운영 상태
 
@@ -70,6 +70,7 @@
 - **Google revoke**: `UserOAuthToken` 기반 revoke 구조 구현 완료
 - **UserOAuthToken**: Google OAuth access token AES-256-GCM 암호화 저장 (`user_oauth_token` 테이블), revoke 성공 시 `revokedAt` 기록
 - **Google OAuth access token 전달 구조**: 클라이언트에서 로그인 시 access token을 서버로 전달해 `UserOAuthToken`에 저장
+- **반려동물 멀티 선택/추가**: `AppHeader` 드롭다운으로 반려동물 전환 및 추가. 전환 시 홈/기록/포토/프로필 전체 갱신. 추가는 `POST /api/v1/pets` 호출 후 신규 pet을 currentPet으로 설정. 선택 ID는 `pet-care:api:current-pet-id`에 캐시 (2026-05-24)
 
 ## 인증 구현 상세
 
@@ -315,15 +316,16 @@ npx expo start -c
 
 1. **[배포 전 필수]** 회원 탈퇴 DB 마이그레이션 — 운영 DB에 `user-withdrawal-migration.sql` 수동 실행
 2. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — 신규 테이블 DDL 수동 실행 필요 여부 확인
-3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-5. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-6. 8080 외부 포트 차단 여부 운영 환경에서 확인
-7. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
-8. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-9. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-10. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 확인)
-11. Phase F AI 리포트 설계
+3. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
+4. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+5. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+6. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+7. 8080 외부 포트 차단 여부 운영 환경에서 확인
+8. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
+9. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
+10. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+11. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 확인)
+12. Phase F AI 리포트 설계
 
 ## 운영 주의사항
 

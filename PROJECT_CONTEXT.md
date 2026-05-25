@@ -1,7 +1,7 @@
 # 꼬리(kkori) 프로젝트 인수인계
 
 기준 문서: `apiserver.md`
-마지막 갱신: 2026-05-23
+마지막 갱신: 2026-05-25
 
 ## 프로젝트 한 줄
 
@@ -249,6 +249,7 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 
 ## 클라이언트 / 공유 UI 메모
 
+- **반려동물 멀티 선택/추가 (2026-05-24)**: `AppHeader` 좌측 반려동물 이름 탭 → 드롭다운으로 전환/추가. 전환 시 홈/기록/포토/프로필 데이터 currentPet 기준 자동 갱신. 추가는 기존 프로필 입력 UI를 생성 모드로 재사용(`POST /api/v1/pets`). 선택한 ID는 `pet-care:api:current-pet-id`에 캐시.
 - 포토탭 상단 오늘/선택 날짜 표시
 - 캡션 수정 기능
 - 사진 자체 수정 불가
@@ -305,13 +306,14 @@ npx expo start -c
 ## 다음 작업 후보
 
 1. **[배포 전 필수]** 운영 DB 마이그레이션 — `user-withdrawal-migration.sql` + `user_oauth_token` DDL 수동 실행
-2. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-3. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-4. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-5. 8080 외부 포트 차단 여부 운영 환경에서 확인
-6. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA
-7. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-8. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+2. 반려동물 삭제 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
+3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+5. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+6. 8080 외부 포트 차단 여부 운영 환경에서 확인
+7. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA
+8. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
+9. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
 
 ## 실행 명령
 

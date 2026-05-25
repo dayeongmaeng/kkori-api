@@ -1,7 +1,7 @@
 # 꼬리 API 개발 로드맵
 
 기준 문서: `apiserver.md`
-마지막 업데이트: 2026-05-23
+마지막 업데이트: 2026-05-25
 
 ## Phase A: 로컬 백엔드 구축
 
@@ -300,11 +300,12 @@
 ## 다음 작업 후보
 
 1. **[배포 전 필수]** 운영 DB 마이그레이션 (D-18) — `user-withdrawal-migration.sql` + `user_oauth_token` DDL 수동 실행
-2. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-3. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-4. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-5. 8080 외부 포트 차단 여부 운영 환경에서 확인
-6. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA (D-19)
-7. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-8. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-9. Phase F AI 리포트 설계
+2. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
+3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+5. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+6. 8080 외부 포트 차단 여부 운영 환경에서 확인
+7. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA (D-19)
+8. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
+9. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+10. Phase F AI 리포트 설계
