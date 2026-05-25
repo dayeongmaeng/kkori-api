@@ -9,7 +9,8 @@ public record OAuthProperties(
         Token token
 ) {
     public record Google(
-            String clientId
+            String clientId,
+            String iosClientId
     ) {
     }
 

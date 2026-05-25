@@ -18,7 +18,7 @@ class GoogleOAuthVerifierTest {
     void verifiesGoogleIdTokenAndExtractsUserInfo() {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        GoogleOAuthVerifier verifier = new GoogleOAuthVerifier(builder, properties("google-client-id"));
+        GoogleOAuthVerifier verifier = new GoogleOAuthVerifier(builder, properties("google-client-id", null));
         server.expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-token"))
                 .andRespond(withSuccess("""
                         {
@@ -40,10 +40,32 @@ class GoogleOAuthVerifierTest {
     }
 
     @Test
+    void verifiesGoogleIdTokenWithIosClientId() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        GoogleOAuthVerifier verifier = new GoogleOAuthVerifier(builder, properties("web-client-id", "ios-client-id"));
+        server.expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-token"))
+                .andRespond(withSuccess("""
+                        {
+                          "sub": "google-user-2",
+                          "aud": "ios-client-id",
+                          "email": "b@example.com",
+                          "name": "꼬리",
+                          "picture": "https://example.com/profile2.png"
+                        }
+                        """, MediaType.APPLICATION_JSON));
+
+        OAuthUserInfo userInfo = verifier.verify("google-token");
+
+        assertThat(userInfo.providerUserId()).isEqualTo("google-user-2");
+        server.verify();
+    }
+
+    @Test
     void rejectsGoogleIdTokenWithDifferentAudience() {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        GoogleOAuthVerifier verifier = new GoogleOAuthVerifier(builder, properties("google-client-id"));
+        GoogleOAuthVerifier verifier = new GoogleOAuthVerifier(builder, properties("google-client-id", null));
         server.expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-token"))
                 .andRespond(withSuccess("""
                         {
@@ -58,10 +80,11 @@ class GoogleOAuthVerifierTest {
         server.verify();
     }
 
-    private OAuthProperties properties(String googleClientId) {
+    private OAuthProperties properties(String webClientId, String iosClientId) {
         return new OAuthProperties(
-                new OAuthProperties.Google(googleClientId),
-                new OAuthProperties.Kakao("kakao-rest", "kakao-native")
+                new OAuthProperties.Google(webClientId, iosClientId),
+                new OAuthProperties.Kakao("kakao-rest", "kakao-native", null),
+                null
         );
     }
 }

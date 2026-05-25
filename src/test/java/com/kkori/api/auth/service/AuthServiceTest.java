@@ -13,10 +13,12 @@ import com.kkori.api.auth.jwt.JwtClaims;
 import com.kkori.api.auth.jwt.JwtTokenIssuer;
 import com.kkori.api.auth.jwt.JwtTokenVerifier;
 import com.kkori.api.auth.jwt.JwtTokenType;
+import com.kkori.api.auth.oauth.OAuthTokenEncryptor;
 import com.kkori.api.auth.oauth.OAuthUserInfo;
 import com.kkori.api.auth.oauth.OAuthVerifier;
 import com.kkori.api.auth.oauth.OAuthVerifierResolver;
 import com.kkori.api.auth.repository.RevokedRefreshTokenRepository;
+import com.kkori.api.auth.repository.UserOAuthTokenRepository;
 import com.kkori.api.common.exception.BusinessException;
 import com.kkori.api.common.exception.ErrorCode;
 import com.kkori.api.device.entity.Device;
@@ -72,6 +74,12 @@ class AuthServiceTest {
     private RevokedRefreshTokenRepository revokedRefreshTokenRepository;
 
     @Mock
+    private UserOAuthTokenRepository userOAuthTokenRepository;
+
+    @Mock
+    private OAuthTokenEncryptor oAuthTokenEncryptor;
+
+    @Mock
     private ProviderLogoutClient providerLogoutClient;
 
     private AuthService authService;
@@ -86,6 +94,8 @@ class AuthServiceTest {
                 jwtTokenIssuer,
                 jwtTokenVerifier,
                 revokedRefreshTokenRepository,
+                userOAuthTokenRepository,
+                oAuthTokenEncryptor,
                 List.of(providerLogoutClient)
         );
     }
@@ -116,7 +126,7 @@ class AuthServiceTest {
         when(jwtTokenIssuer.issueRefreshToken(any(User.class))).thenReturn("refresh");
 
         OAuthLoginResponse response = authService.login(
-                new OAuthLoginRequest(OAuthProvider.GOOGLE, "id-token", null, null, null, "device-1")
+                new OAuthLoginRequest(OAuthProvider.GOOGLE, "id-token", null, null, null, "device-1", null, null)
         );
 
         assertThat(response.accessToken()).isEqualTo("access");
@@ -142,7 +152,7 @@ class AuthServiceTest {
         when(jwtTokenIssuer.issueRefreshToken(user)).thenReturn("refresh");
 
         OAuthLoginResponse response = authService.login(
-                new OAuthLoginRequest(OAuthProvider.KAKAO, null, "access-token", null, null, "device-1")
+                new OAuthLoginRequest(OAuthProvider.KAKAO, null, "access-token", null, null, "device-1", null, null)
         );
 
         assertThat(response.user().externalId()).isEqualTo(user.getExternalId());

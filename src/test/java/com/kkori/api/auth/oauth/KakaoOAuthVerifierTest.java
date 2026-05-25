@@ -62,7 +62,9 @@ class KakaoOAuthVerifierTest {
                 null,
                 "kakao-code",
                 "http://localhost:8081/oauth/kakao",
-                "device-1"
+                "device-1",
+                null,
+                null
         ));
 
         assertThat(userInfo.providerUserId()).isEqualTo("12345");
@@ -117,8 +119,9 @@ class KakaoOAuthVerifierTest {
 
     private OAuthProperties properties() {
         return new OAuthProperties(
-                new OAuthProperties.Google("google-client"),
-                new OAuthProperties.Kakao("kakao-rest", "kakao-native")
+                new OAuthProperties.Google("google-client", null),
+                new OAuthProperties.Kakao("kakao-rest", "kakao-native", null),
+                null
         );
     }
 }

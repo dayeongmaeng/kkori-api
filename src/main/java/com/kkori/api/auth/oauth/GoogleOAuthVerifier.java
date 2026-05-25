@@ -4,16 +4,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kkori.api.common.exception.BusinessException;
 import com.kkori.api.common.exception.ErrorCode;
 import com.kkori.api.user.entity.OAuthProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
 @Component
 @EnableConfigurationProperties(OAuthProperties.class)
 public class GoogleOAuthVerifier implements OAuthVerifier {
-
-    private static final String TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
 
     private final RestClient restClient;
     private final OAuthProperties properties;
@@ -49,10 +52,23 @@ public class GoogleOAuthVerifier implements OAuthVerifier {
             throw new BusinessException(ErrorCode.AUTH_002);
         }
 
-        String clientId = resolveClientId();
-        if (response == null || isBlank(response.sub()) || !clientId.equals(response.aud())) {
+        if (response == null || isBlank(response.sub())) {
             throw new BusinessException(ErrorCode.AUTH_002);
         }
+
+        List<ClientIdEntry> allowedIds = resolveAllowedClientIds();
+        ClientIdEntry matched = allowedIds.stream()
+                .filter(entry -> entry.clientId().equals(response.aud()))
+                .findFirst()
+                .orElse(null);
+
+        if (matched == null) {
+            log.warn("Google idToken audience rejected. allowed_types={}",
+                    allowedIds.stream().map(e -> e.type().name()).toList());
+            throw new BusinessException(ErrorCode.AUTH_002);
+        }
+
+        log.debug("Google idToken verified. client_type={}", matched.type());
 
         return new OAuthUserInfo(
                 response.sub(),
@@ -62,16 +78,32 @@ public class GoogleOAuthVerifier implements OAuthVerifier {
         );
     }
 
-    private String resolveClientId() {
-        if (properties.google() == null || isBlank(properties.google().clientId())) {
+    private List<ClientIdEntry> resolveAllowedClientIds() {
+        List<ClientIdEntry> allowed = new ArrayList<>();
+        OAuthProperties.Google google = properties.google();
+        if (google != null) {
+            if (!isBlank(google.clientId())) {
+                allowed.add(new ClientIdEntry(google.clientId(), ClientType.WEB));
+            }
+            if (!isBlank(google.iosClientId())) {
+                allowed.add(new ClientIdEntry(google.iosClientId(), ClientType.IOS));
+            }
+        }
+        if (allowed.isEmpty()) {
             throw new BusinessException(ErrorCode.AUTH_002);
         }
-        return properties.google().clientId();
+        return allowed;
     }
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
+
+    private enum ClientType {
+        WEB, IOS
+    }
+
+    private record ClientIdEntry(String clientId, ClientType type) {}
 
     private record GoogleTokenInfoResponse(
             String sub,
