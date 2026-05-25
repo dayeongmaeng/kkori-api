@@ -74,7 +74,9 @@
 - OAuth 로그인 API: `POST /api/v1/auth/oauth/login`
 - 요청 필드: provider, idToken/accessToken/code/redirectUri, deviceExternalId
 - 응답: JWT accessToken, refreshToken, user
-- Google은 idToken을 `https://oauth2.googleapis.com/tokeninfo`로 검증하고 `GOOGLE_CLIENT_ID` audience를 대조한다.
+- Google은 idToken을 `https://oauth2.googleapis.com/tokeninfo`로 검증하고 `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID` 두 audience를 모두 허용한다.
+  - Web: `response_type=id_token token` 흐름, access token 획득 후 서버 전달
+  - iOS: native OAuth 흐름, idToken 기반 로그인, iOS OAuth Client ID 사용
 - Kakao는 accessToken으로 `https://kapi.kakao.com/v2/user/me`를 호출한다.
 - Kakao authorization code 교환 흐름도 구현되어 있다.
 - JWT access/refresh 발급, accessToken 필터, refresh API가 구현되어 있다.
@@ -106,7 +108,7 @@
 - **DailyPhoto**: 하루 한 장 데일리 포토 (`petId + date` unique), caption, mediumUrl, thumbnailUrl. soft delete 적용.
 - **DailyLog**: 일일 건강 기록 (식사/물/산책/배변/소변/컨디션/체중/메모). soft delete 적용.
 - **DailyLogPhoto**: 기록탭 사진. DailyLog별 최대 3장, S3 medium/thumbnail URL 저장. soft delete 적용.
-- **UserOAuthToken**: Google OAuth access token 암호화 저장 (`user_oauth_token` 테이블). AES-256-GCM 암호화. revoke 성공 시 `revokedAt` 기록. Google revoke 시 사용.
+- **UserOAuthToken**: Google OAuth access token 암호화 저장 (`user_oauth_token` 테이블). AES-256-GCM 암호화. UNIQUE(user_id, provider). 필드: `encrypted_access_token`, `encrypted_refresh_token`, `access_token_expires_at`, `scope`, `revoked_at`. revoke 성공 시 `revokedAt` 기록. Google revoke 시 사용.
 - **RevokedRefreshToken**: 로그아웃된 refreshToken 해시 저장
 
 ## Pet 프로필 상태
@@ -193,7 +195,9 @@ dto
 
 ## 환경변수 / 설정 메모
 
-- `.env.example`에 DB, S3, Google, Kakao, JWT 환경변수 예시가 있다.
+- `.env.example`에 DB, S3, Google, Kakao, JWT, OAuth Token Encryption 환경변수 예시가 있다.
+- `GOOGLE_CLIENT_ID` 단일 키 대신 `GOOGLE_WEB_CLIENT_ID`와 `GOOGLE_IOS_CLIENT_ID`로 분리해 audience 검증에 사용한다.
+- `OAUTH_TOKEN_ENCRYPTION_KEY`: AES-256-GCM 기반 OAuth 토큰 암호화 키. `OAuthTokenEncryptor`가 사용. 운영 환경변수 필수.
 - `application.yaml`은 S3 region으로 `AWS_S3_REGION`을 읽는다.
 - `docker-compose.yml`은 현재 `AWS_REGION`을 전달한다.
 - `AWS_REGION`과 `AWS_S3_REGION` 표기가 섞여 있으므로 정리 필요.

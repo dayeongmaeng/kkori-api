@@ -68,8 +68,8 @@
 - **회원 탈퇴 API** (`DELETE /api/v1/users/me`): 개인정보 익명화 + WITHDRAWN 처리 + 소유 Pet cascade soft delete + S3 이미지 비동기 삭제 + OAuth 연결 해제 실제 구현
 - **Kakao unlink**: Admin Key 기반 HTTP 호출 구현 완료
 - **Google revoke**: `UserOAuthToken` 기반 revoke 구조 구현 완료
-- **UserOAuthToken**: Google OAuth access token AES-256-GCM 암호화 저장 (`user_oauth_token` 테이블), revoke 성공 시 `revokedAt` 기록
-- **Google OAuth access token 전달 구조**: 클라이언트에서 로그인 시 access token을 서버로 전달해 `UserOAuthToken`에 저장
+- **UserOAuthToken**: Google OAuth token AES-256-GCM 암호화 저장 (`user_oauth_token` 테이블). UNIQUE(user_id, provider). 필드: `encrypted_access_token`, `encrypted_refresh_token`, `access_token_expires_at`, `scope`, `revoked_at`. revoke 성공 시 `revokedAt` 기록
+- **Google OAuth access token 전달 구조**: Web 로그인 시 access token을 서버로 전달해 `UserOAuthToken`에 저장. `OAUTH_TOKEN_ENCRYPTION_KEY` 환경변수 필수.
 - **반려동물 멀티 선택/추가**: `AppHeader` 드롭다운으로 반려동물 전환 및 추가. 전환 시 홈/기록/포토/프로필 전체 갱신. 추가는 `POST /api/v1/pets` 호출 후 신규 pet을 currentPet으로 설정. 선택 ID는 `pet-care:api:current-pet-id`에 캐시 (2026-05-24)
 
 ## 인증 구현 상세
@@ -81,6 +81,9 @@
 - `POST /api/v1/auth/oauth/login`
   - 요청: provider, idToken/accessToken/code/redirectUri, deviceExternalId
   - 응답: accessToken, refreshToken, user
+  - Google audience 검증: `GOOGLE_WEB_CLIENT_ID`와 `GOOGLE_IOS_CLIENT_ID` 모두 허용
+    - Web: access token도 함께 수신해 `UserOAuthToken`에 저장
+    - iOS: idToken 기반 로그인
 - `POST /api/v1/auth/refresh`
   - refreshToken 검증 후 새 accessToken 발급
   - 폐기된 refreshToken 해시는 차단
@@ -255,6 +258,8 @@ AWS_S3_BUCKET=버킷명만
 - `docker-compose.yml`은 현재 `AWS_REGION`을 전달한다.
 - `AWS_REGION` / `AWS_S3_REGION` 표기를 정리해야 한다.
 - `application.yaml`의 multipart 설정은 현재 `server.servlet.multipart` 아래에 있다. Spring Boot 표준 위치인 `spring.servlet.multipart`로 맞출지 확인 필요.
+- `GOOGLE_CLIENT_ID` 단일 키 대신 `GOOGLE_WEB_CLIENT_ID` + `GOOGLE_IOS_CLIENT_ID`로 분리됨. 운영 환경변수 갱신 필요.
+- `OAUTH_TOKEN_ENCRYPTION_KEY` 신규 환경변수 추가 필요. AES-256-GCM 암호화 키.
 
 ## 테스트 상태
 

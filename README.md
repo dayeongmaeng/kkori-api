@@ -33,8 +33,10 @@ cp .env.example .env
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | S3 IAM 키 |
 | `AWS_S3_BUCKET` | S3 버킷명 (순수 버킷명만, `s3://` 제외) |
 | `AWS_S3_REGION` | S3 리전 (예: `ap-northeast-2`) |
-| `GOOGLE_CLIENT_ID` | Google OAuth 클라이언트 ID |
+| `GOOGLE_WEB_CLIENT_ID` | Google OAuth Web 클라이언트 ID |
+| `GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS 클라이언트 ID |
 | `KAKAO_REST_API_KEY` / `KAKAO_NATIVE_APP_KEY` | Kakao OAuth 키 |
+| `OAUTH_TOKEN_ENCRYPTION_KEY` | Google OAuth 토큰 AES-256-GCM 암호화 키 |
 
 ### Docker Compose로 실행
 

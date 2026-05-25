@@ -192,6 +192,11 @@
   - `user_oauth_token` 테이블 DDL 운영 적용 여부 확인
 - [ ] D-19: Google revoke 실기기 QA
   - UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인
+- [x] D-20: Google 로그인 Web/iOS 분리 지원
+  - Web: `response_type=id_token token`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, access token 서버 전달
+  - iOS: native OAuth 흐름, `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, idToken 기반
+  - 서버 audience 검증: `GOOGLE_WEB_CLIENT_ID` + `GOOGLE_IOS_CLIENT_ID` 모두 허용
+  - `OAuthTokenEncryptor` + `UserOAuthToken` 저장 구조 (AES-256-GCM), `OAUTH_TOKEN_ENCRYPTION_KEY` 신규 환경변수
 
 ## Phase E: 사진 클라우드 저장
 
@@ -291,9 +296,10 @@
 - [x] Kakao unlink 실제 구현 (D-16)
 - [x] Google revoke 구조 구현 (D-16)
 - [x] UserOAuthToken AES-256-GCM 암호화 저장 (D-17)
+- [x] Google 로그인 Web/iOS 분리 지원 (D-20)
 - [ ] Google revoke 실기기 QA (D-19)
 - [ ] 8080 외부 포트 닫기 확인
-- [ ] 운영 OAuth/JWT 환경변수 반영 확인
+- [ ] 운영 OAuth/JWT 환경변수 반영 확인 (`GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`, `OAUTH_TOKEN_ENCRYPTION_KEY` 포함)
 - [ ] Google/Kakao 실기기 로그인 QA
 - [ ] 실패 테스트 수정
 
