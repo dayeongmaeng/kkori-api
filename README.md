@@ -86,6 +86,16 @@ docker compose logs -f api
 
 API 문서: `/swagger-ui.html`
 
+## 로그
+
+| 파일 | 설명 |
+|---|---|
+| `logs/app.log` | 전체 로그. 일자별 rolling, 30일 보관 |
+| `logs/error.log` | ERROR 레벨만 필터링. 일자별 rolling, 30일 보관 |
+
+- 모든 HTTP 요청에 `X-Request-Id` 응답 헤더 포함
+- 운영 배포 시 `spring.profiles.active=prod` 설정 필요 (DEBUG 비활성화)
+
 ## 인증
 
 - OAuth 전용 (Google, Kakao). 이메일/비밀번호 가입 없음.

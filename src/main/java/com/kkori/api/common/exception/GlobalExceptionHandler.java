@@ -20,8 +20,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
         ErrorCode code = e.getErrorCode();
+        if (code.getHttpStatus().is5xxServerError()) {
+            log.error("Business exception: code={}", code.getCode(), e);
+        } else if (isAuthCode(code)) {
+            log.warn("Auth exception: code={}", code.getCode());
+        }
         ErrorResponse error = new ErrorResponse(code.getCode(), code.getMessage(), null);
         return ResponseEntity.status(code.getHttpStatus()).body(ApiResponse.error(error));
+    }
+
+    private boolean isAuthCode(ErrorCode code) {
+        return code.getCode().startsWith("AUTH_");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -14,12 +14,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -54,6 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         if (!authorization.startsWith(BEARER_PREFIX)) {
+            log.warn("JWT auth failed: reason=invalid_bearer_format path={}", request.getRequestURI());
             writeUnauthorized(response, ErrorCode.AUTH_003);
             return;
         }
@@ -63,6 +66,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             claims = jwtTokenVerifier.verifyAccessToken(token);
         } catch (BusinessException e) {
+            log.warn("JWT auth failed: code={} path={}", e.getErrorCode().getCode(), request.getRequestURI());
             writeUnauthorized(response, e.getErrorCode());
             return;
         }

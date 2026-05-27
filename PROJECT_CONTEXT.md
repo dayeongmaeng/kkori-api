@@ -1,7 +1,7 @@
 # 꼬리(kkori) 프로젝트 인수인계
 
 기준 문서: `apiserver.md`
-마지막 갱신: 2026-05-25
+마지막 갱신: 2026-05-27
 
 ## 프로젝트 한 줄
 
@@ -70,6 +70,7 @@
   - S3 이미지 AFTER_COMMIT 비동기 삭제 (PetImageCleanupEvent/Listener/AsyncConfig)
   - Spring Security 도입 + CorsConfigurationSource 기반 CORS 일원화
   - localhost web ↔ api CORS 해결, 401 응답에도 CORS 헤더 유지
+- ✅ Phase C+: requestId 기반 로그 정책 적용 완료 (2026-05-27)
 - 🔄 Phase D: OAuth/JWT 인증 1차 구현 완료 + 운영/QA 진행
   - User 소유권 전환
   - Google/Kakao OAuth 검증
@@ -305,6 +306,22 @@ npx expo start -c
 - client/api 프롬프트에는 "직접 화면을 열어서 실행/확인"하라는 문구를 넣지 않는다.
 - 화면 확인은 사용자가 직접 진행한다.
 - 프롬프트 검증은 "검증 포인트/기대 동작" 중심으로 작성한다.
+
+## 로그 정책 (2026-05-27 적용)
+
+- `logback-spring.xml`: 파일 로그 설정, 일자별 rolling, 30일 보관
+  - `logs/app.log` — 전체 로그
+  - `logs/error.log` — ERROR 레벨만
+- `common/filter/RequestLoggingFilter`: 모든 HTTP 요청에 requestId 생성 → MDC + `X-Request-Id` 응답 헤더 + 접속 로그
+  - 로그 형식: `HTTP {method} {path} {status} {elapsedMs}ms requestId={id} [userId={id}]`
+- `prod` 프로파일: `com.kkori.api` → INFO (DEBUG 비활성화), Hibernate SQL 억제
+- 로그 레벨 정책:
+  - JWT 인증/인가 실패 → WARN (`JwtAuthenticationFilter`)
+  - OAuth 검증 단계별 실패 reason → WARN (`GoogleOAuthVerifier`, `KakaoOAuthVerifier`)
+  - AUTH_* BusinessException → WARN (`GlobalExceptionHandler`)
+  - 5xx BusinessException, 예상 밖 예외 → ERROR
+  - 로그인 성공, 토큰 재발급 성공 → INFO (`AuthService`)
+- 운영 배포 시 `spring.profiles.active=prod` 설정 필요
 
 ## 다음 작업 후보
 

@@ -72,11 +72,13 @@ public class AuthService {
 
         storeGoogleOAuthTokenIfPresent(user, request);
 
-        return new OAuthLoginResponse(
+        OAuthLoginResponse loginResponse = new OAuthLoginResponse(
                 jwtTokenIssuer.issueAccessToken(user),
                 jwtTokenIssuer.issueRefreshToken(user),
                 UserResponse.from(user)
         );
+        log.info("Login succeeded: provider={} userId={}", user.getProvider(), user.getId());
+        return loginResponse;
     }
 
     public RefreshTokenResponse refresh(RefreshTokenRequest request) {
@@ -93,7 +95,9 @@ public class AuthService {
         }
 
         // TODO: Add refresh token rotation and server-side refresh token revocation.
-        return new RefreshTokenResponse(jwtTokenIssuer.issueAccessToken(user));
+        RefreshTokenResponse refreshResponse = new RefreshTokenResponse(jwtTokenIssuer.issueAccessToken(user));
+        log.info("Token refresh succeeded: userId={}", user.getId());
+        return refreshResponse;
     }
 
     @Transactional

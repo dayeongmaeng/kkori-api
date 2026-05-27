@@ -1,0 +1,76 @@
+2026-05-27 15:37:41.545 [background-preinit] [-] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2026-05-27 15:37:41.616 [restartedMain] [-] INFO  com.kkori.api.KkoriApiApplication - Starting KkoriApiApplication using Java 21.0.1 with PID 43804 (C:\dev\projects\kkori-api\build\classes\java\main started by e1354 in C:\dev\projects\kkori-api)
+2026-05-27 15:37:41.616 [restartedMain] [-] DEBUG com.kkori.api.KkoriApiApplication - Running with Spring Boot v3.5.14, Spring v6.2.18
+2026-05-27 15:37:41.617 [restartedMain] [-] INFO  com.kkori.api.KkoriApiApplication - No active profile set, falling back to 1 default profile: "default"
+2026-05-27 15:37:41.680 [restartedMain] [-] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-05-27 15:37:41.681 [restartedMain] [-] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-05-27 15:37:43.244 [restartedMain] [-] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-27 15:37:43.535 [restartedMain] [-] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 279 ms. Found 9 JPA repository interfaces.
+2026-05-27 15:37:44.438 [restartedMain] [-] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-05-27 15:37:44.453 [restartedMain] [-] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-05-27 15:37:44.457 [restartedMain] [-] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-05-27 15:37:44.458 [restartedMain] [-] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.54]
+2026-05-27 15:37:44.573 [restartedMain] [-] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-05-27 15:37:44.575 [restartedMain] [-] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2892 ms
+2026-05-27 15:37:44.866 [restartedMain] [-] DEBUG c.k.a.a.f.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2026-05-27 15:37:44.867 [restartedMain] [-] DEBUG c.k.a.c.filter.RequestLoggingFilter - Filter 'requestLoggingFilter' configured for use
+2026-05-27 15:37:45.150 [restartedMain] [-] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-27 15:37:45.232 [restartedMain] [-] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.49.Final
+2026-05-27 15:37:45.274 [restartedMain] [-] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-05-27 15:37:45.644 [restartedMain] [-] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-27 15:37:45.689 [restartedMain] [-] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-05-27 15:37:45.878 [restartedMain] [-] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7c3b7d94
+2026-05-27 15:37:45.881 [restartedMain] [-] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-05-27 15:37:45.918 [restartedMain] [-] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-27 15:37:45.943 [restartedMain] [-] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.14
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-27 15:37:47.293 [restartedMain] [-] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-27 15:37:47.430 [restartedMain] [-] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-27 15:37:48.131 [restartedMain] [-] INFO  c.k.a.auth.oauth.OAuthTokenEncryptor - [OAuthTokenEncryptor] initialized: enabled=true, keyLength=53
+2026-05-27 15:37:49.092 [restartedMain] [-] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-27 15:37:49.745 [restartedMain] [-] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-05-27 15:37:49.765 [restartedMain] [-] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-05-27 15:37:49.779 [restartedMain] [-] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-05-27 15:37:49.788 [restartedMain] [-] INFO  com.kkori.api.KkoriApiApplication - Started KkoriApiApplication in 9.02 seconds (process running for 10.368)
+2026-05-27 15:37:49.794 [restartedMain] [-] WARN  o.s.c.events.SpringDocAppInitializer - SpringDoc /api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-05-27 15:37:49.794 [restartedMain] [-] WARN  o.s.c.events.SpringDocAppInitializer - SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2026-05-27 15:54:26.326 [http-nio-8080-exec-1] [-] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-27 15:54:26.326 [http-nio-8080-exec-1] [-] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-05-27 15:54:26.328 [http-nio-8080-exec-1] [-] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-05-27 15:54:26.373 [http-nio-8080-exec-1] [6ece51ec262b4948b2268f8be1494c00] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP OPTIONS /api/v1/caregivers 200 41ms requestId=6ece51ec262b4948b2268f8be1494c00
+2026-05-27 15:54:26.722 [http-nio-8080-exec-2] [65457795480f4a138abc608231f982d5] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/caregivers 200 345ms requestId=65457795480f4a138abc608231f982d5 userId=1
+2026-05-27 15:54:26.728 [http-nio-8080-exec-3] [a644415d29f3486aaa16261b420bf736] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP OPTIONS /api/v1/pets 200 1ms requestId=a644415d29f3486aaa16261b420bf736
+2026-05-27 15:54:26.767 [http-nio-8080-exec-4] [b1e6a1697bff4842b9029f0698756941] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/pets 200 36ms requestId=b1e6a1697bff4842b9029f0698756941 userId=1
+2026-05-27 15:54:26.775 [http-nio-8080-exec-5] [50e079d2639b4dbdaf09c6527be21e8c] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP OPTIONS /api/v1/logs 200 1ms requestId=50e079d2639b4dbdaf09c6527be21e8c
+2026-05-27 15:54:26.778 [http-nio-8080-exec-6] [30547a1b42b9485397c54ac5c71ed0dc] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP OPTIONS /api/v1/photos 200 2ms requestId=30547a1b42b9485397c54ac5c71ed0dc
+2026-05-27 15:54:26.779 [http-nio-8080-exec-7] [4f82991e77eb4101b342d9b254feaa65] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP OPTIONS /api/v1/logs 200 1ms requestId=4f82991e77eb4101b342d9b254feaa65
+2026-05-27 15:54:26.780 [http-nio-8080-exec-8] [cde43632f9634955868d1bebe8641a02] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP OPTIONS /api/v1/photos 200 1ms requestId=cde43632f9634955868d1bebe8641a02
+2026-05-27 15:54:26.806 [http-nio-8080-exec-1] [227fdd46e043450f965f4a65dcd21e7c] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 23ms requestId=227fdd46e043450f965f4a65dcd21e7c userId=1
+2026-05-27 15:54:26.815 [http-nio-8080-exec-2] [d3209e64df454982b16ce6e99773b9a9] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/photos 200 30ms requestId=d3209e64df454982b16ce6e99773b9a9 userId=1
+2026-05-27 15:54:26.819 [http-nio-8080-exec-10] [50f48c023925477f820a20e68adafbd0] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/photos 200 37ms requestId=50f48c023925477f820a20e68adafbd0 userId=1
+2026-05-27 15:54:26.836 [http-nio-8080-exec-9] [b56a436106ef43f88ec6f8fb73d25000] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 55ms requestId=b56a436106ef43f88ec6f8fb73d25000 userId=1
+2026-05-27 15:54:26.969 [http-nio-8080-exec-3] [cf85d47b4cb9403f890e0cae0627cc30] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 35ms requestId=cf85d47b4cb9403f890e0cae0627cc30 userId=1
+2026-05-27 15:54:38.631 [http-nio-8080-exec-4] [c97aa1d46dd14036a0a182755315317c] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 33ms requestId=c97aa1d46dd14036a0a182755315317c userId=1
+2026-05-27 15:54:42.380 [http-nio-8080-exec-5] [401637739c0a4ff49c448169ea1420db] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 33ms requestId=401637739c0a4ff49c448169ea1420db userId=1
+2026-05-27 15:54:43.263 [http-nio-8080-exec-6] [477b271625a34a77abc0aa4c8e2d25af] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/photos 200 22ms requestId=477b271625a34a77abc0aa4c8e2d25af userId=1
+2026-05-27 15:54:43.281 [http-nio-8080-exec-7] [5835e4620e424093bdcbd85941c9f314] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/photos 200 17ms requestId=5835e4620e424093bdcbd85941c9f314 userId=1
+2026-05-27 15:54:47.672 [http-nio-8080-exec-8] [a1f6d7f7d282455a903351aaab183d5c] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/pets 200 17ms requestId=a1f6d7f7d282455a903351aaab183d5c userId=1
+2026-05-27 15:54:56.847 [http-nio-8080-exec-1] [7718dc7cf5f34313829c526dabd91506] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/photos 200 16ms requestId=7718dc7cf5f34313829c526dabd91506 userId=1
+2026-05-27 15:55:18.968 [http-nio-8080-exec-10] [695f4a7314d84ccfb46dffdf8e6873a5] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/photos 200 17ms requestId=695f4a7314d84ccfb46dffdf8e6873a5 userId=1
+2026-05-27 15:55:18.969 [http-nio-8080-exec-2] [cb773a5ea67c4151aea33a81d00540df] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 19ms requestId=cb773a5ea67c4151aea33a81d00540df userId=1
+2026-05-27 15:55:21.913 [http-nio-8080-exec-9] [db8ca0309cdf4c75bf70287622905c1c] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 26ms requestId=db8ca0309cdf4c75bf70287622905c1c userId=1
+2026-05-27 15:55:23.814 [http-nio-8080-exec-3] [dae73c0e0eeb4c9aa247209b8364ce48] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 16ms requestId=dae73c0e0eeb4c9aa247209b8364ce48 userId=1
+2026-05-27 15:55:24.504 [http-nio-8080-exec-4] [6d34e2ed3c124c09b7aff2e95c99e7ab] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP OPTIONS /api/v1/logs 200 0ms requestId=6d34e2ed3c124c09b7aff2e95c99e7ab
+2026-05-27 15:55:24.685 [http-nio-8080-exec-5] [73eb35e72a0e4aa596444962ff5ba13e] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP POST /api/v1/logs 201 173ms requestId=73eb35e72a0e4aa596444962ff5ba13e userId=1
+2026-05-27 15:58:48.053 [http-nio-8080-exec-2] [1b2429d8c1b44f37b1895d4ea70745f8] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/photos 200 32ms requestId=1b2429d8c1b44f37b1895d4ea70745f8 userId=1
+2026-05-27 15:58:48.059 [http-nio-8080-exec-10] [61b9d0930ee048e1a2a4bd96dd0e7128] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 39ms requestId=61b9d0930ee048e1a2a4bd96dd0e7128 userId=1
+2026-05-27 15:58:48.095 [http-nio-8080-exec-9] [f93004a81b9a4aa8a31e2c384a1ba239] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP GET /api/v1/logs 200 32ms requestId=f93004a81b9a4aa8a31e2c384a1ba239 userId=1
+2026-05-27 15:58:52.693 [http-nio-8080-exec-3] [53fa69191a5e4e658b2fd6d585520a64] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP OPTIONS /api/v1/auth/logout 200 1ms requestId=53fa69191a5e4e658b2fd6d585520a64
+2026-05-27 15:58:52.728 [http-nio-8080-exec-4] [ef9d5d21b8b64211a250287ad91b0abd] INFO  c.kkori.api.auth.service.AuthService - Logout processed: provider=GOOGLE, userId=1, deviceExternalId=cbd1afc0-706b-4d20-9f2b-2ea32f969b3b, appSessionRevoked=false, providerLogoutAttempted=false, providerLogoutSuccess=false
+2026-05-27 15:58:52.734 [http-nio-8080-exec-4] [ef9d5d21b8b64211a250287ad91b0abd] INFO  c.k.a.c.filter.RequestLoggingFilter - HTTP POST /api/v1/auth/logout 200 37ms requestId=ef9d5d21b8b64211a250287ad91b0abd userId=1

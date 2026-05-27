@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ public class GoogleOAuthVerifier implements OAuthVerifier {
     @Override
     public OAuthUserInfo verify(String token) {
         if (token == null || token.isBlank()) {
+            log.warn("OAuth verification failed: provider=GOOGLE reason=token_blank");
             throw new BusinessException(ErrorCode.AUTH_002);
         }
 
@@ -48,11 +50,17 @@ public class GoogleOAuthVerifier implements OAuthVerifier {
                             .build())
                     .retrieve()
                     .body(GoogleTokenInfoResponse.class);
+        } catch (RestClientResponseException e) {
+            log.warn("OAuth verification failed: provider=GOOGLE reason=tokeninfo_http_error status={}",
+                    e.getStatusCode().value());
+            throw new BusinessException(ErrorCode.AUTH_002);
         } catch (RestClientException e) {
+            log.warn("OAuth verification failed: provider=GOOGLE reason=tokeninfo_request_error");
             throw new BusinessException(ErrorCode.AUTH_002);
         }
 
         if (response == null || isBlank(response.sub())) {
+            log.warn("OAuth verification failed: provider=GOOGLE reason=tokeninfo_response_invalid");
             throw new BusinessException(ErrorCode.AUTH_002);
         }
 
@@ -63,12 +71,12 @@ public class GoogleOAuthVerifier implements OAuthVerifier {
                 .orElse(null);
 
         if (matched == null) {
-            log.warn("Google idToken audience rejected. allowed_types={}",
-                    allowedIds.stream().map(e -> e.type().name()).toList());
+            log.warn("OAuth verification failed: provider=GOOGLE reason=audience_mismatch audience={} allowedTypes={}",
+                    response.aud(), allowedIds.stream().map(e -> e.type().name()).toList());
             throw new BusinessException(ErrorCode.AUTH_002);
         }
 
-        log.debug("Google idToken verified. client_type={}", matched.type());
+        log.info("OAuth verification succeeded: provider=GOOGLE clientType={}", matched.type());
 
         return new OAuthUserInfo(
                 response.sub(),

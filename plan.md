@@ -1,7 +1,7 @@
 # 꼬리 API 개발 로드맵
 
 기준 문서: `apiserver.md`
-마지막 업데이트: 2026-05-25
+마지막 업데이트: 2026-05-27
 
 ## Phase A: 로컬 백엔드 구축
 
@@ -85,7 +85,11 @@
   - 8080은 Nginx 내부 프록시로만 사용한다.
   - 코드의 `docker-compose.yml`은 현재 `8080:8080`으로 바인딩한다.
   - 실제 외부 차단 여부는 Lightsail 방화벽/Nginx 기준으로 확인 필요.
-- [ ] C-7: 모니터링/로그 체계 정리
+- [x] C-7: 모니터링/로그 체계 정리
+  - requestId 기반 MDC 추적 (`RequestLoggingFilter`, `X-Request-Id` 헤더)
+  - 파일 로그: `logs/app.log`, `logs/error.log` — 일자별 rolling, 30일 보관 (`logback-spring.xml`)
+  - 레벨 정책: JWT/OAuth 인증 실패 → WARN, 5xx/미처리 예외 → ERROR, 주요 성공 흐름 → INFO
+  - `prod` 프로파일: DEBUG 비활성화 (`spring.profiles.active=prod` 설정 필요)
 - [ ] C-8: 배포 방식 개선
   - 서버 직접 빌드 대신 로컬/GitHub Actions 빌드 후 배포 검토
 - [ ] C-9: 환경변수 표기 정리
@@ -292,6 +296,7 @@
 - [x] 로그아웃 API와 refreshToken 해시 폐기 구현
 - [x] 회원 탈퇴 API 서버 구현 완료 (D-13)
 - [ ] **회원 탈퇴 DB 마이그레이션 (D-18)** — 배포 전 필수
+- [ ] **운영 서버 `spring.profiles.active=prod` 설정** — 배포 전 필수 (DEBUG 비활성화, 파일 로그)
 - [x] 회원 탈퇴 클라이언트 UI (D-15)
 - [x] Kakao unlink 실제 구현 (D-16)
 - [x] Google revoke 구조 구현 (D-16)
@@ -306,12 +311,13 @@
 ## 다음 작업 후보
 
 1. **[배포 전 필수]** 운영 DB 마이그레이션 (D-18) — `user-withdrawal-migration.sql` + `user_oauth_token` DDL 수동 실행
-2. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
-3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-5. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-6. 8080 외부 포트 차단 여부 운영 환경에서 확인
-7. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA (D-19)
-8. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-9. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-10. Phase F AI 리포트 설계
+2. **[배포 전 필수]** 운영 서버에 `spring.profiles.active=prod` 설정 — 파일 로그 활성화, DEBUG 비활성화
+3. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
+4. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+5. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+6. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+7. 8080 외부 포트 차단 여부 운영 환경에서 확인
+8. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA (D-19)
+9. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
+10. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+11. Phase F AI 리포트 설계

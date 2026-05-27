@@ -3,7 +3,7 @@
 반려동물 일상 기록 앱 "꼬리"의 백엔드 서버.
 
 기준 문서: `apiserver.md`
-마지막 갱신: 2026-05-25
+마지막 갱신: 2026-05-27
 
 ## 프로젝트 컨텍스트
 
@@ -64,6 +64,7 @@
 - Phase D: OAuth/JWT 인증 1차 구현 완료 + 운영/QA 진행
 - Phase D+: 회원 탈퇴 API 서버 구현 완료 + 클라이언트 UI 연동 완료
 - Phase E: S3 사진 업로드 및 후속 UX 안정화 완료
+- Phase C+: requestId 기반 로그 정책 적용 완료 (2026-05-27)
 - Phase F: AI 리포트 미진행
 
 ## 인증 상태
@@ -164,7 +165,8 @@
 
 ```text
 com.kkori.api
-├── common         # 공통 응답, 예외, 설정 (AsyncConfig 포함)
+├── common         # 공통 응답, 예외, 설정, 필터 (AsyncConfig 포함)
+│   └── filter     # RequestLoggingFilter (requestId MDC, X-Request-Id 헤더, HTTP 접속 로그)
 ├── auth           # OAuth 로그인, JWT, 로그아웃
 │   └── oauth
 │       └── disconnect  # OAuthDisconnectService 인터페이스
@@ -278,6 +280,25 @@ dto
 - 401 응답에도 CORS 헤더가 포함된다 (Spring Security 설정에서 처리).
 - 개발: `http://localhost:8081`(웹) ↔ `http://localhost:8080`(API) CORS 허용.
 
+## 로그 정책
+
+- `logback-spring.xml`: 콘솔 + 파일 로그, 일자별 rolling, 30일 보관
+  - `logs/app.log` — 전체 로그
+  - `logs/error.log` — ERROR 레벨만
+- `prod` 프로파일: `com.kkori.api` → INFO (DEBUG 비활성화), Hibernate SQL 억제
+- 비-prod: `com.kkori.api` → DEBUG
+- `RequestLoggingFilter` (`common/filter/`): 모든 요청에 requestId 생성 → MDC + `X-Request-Id` 응답 헤더
+  - 로그 형식: `HTTP {method} {path} {status} {elapsed}ms requestId={id} [userId={id}]`
+  - 필터 순서: `Ordered.HIGHEST_PRECEDENCE` (가장 먼저 실행)
+- 로그 레벨 정책:
+  - JWT Bearer 형식 오류, JWT 검증 실패 → **WARN** (`JwtAuthenticationFilter`)
+  - Google/Kakao OAuth 검증 단계별 실패 reason → **WARN** (verifier 각각)
+  - `AUTH_*` BusinessException → **WARN** (`GlobalExceptionHandler`)
+  - 5xx BusinessException, 미처리 예외 → **ERROR**
+  - 로그인·토큰 재발급·로그아웃 성공 → **INFO** (`AuthService`)
+- 운영 배포 시 `spring.profiles.active=prod` 설정 필요
+- accessToken, refreshToken, idToken, authorization code, 개인정보, 요청/응답 body 전문은 로그에 남기지 않는다.
+
 ## 예외 처리
 
 - 전역 핸들러: `@RestControllerAdvice`
@@ -370,13 +391,14 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 
 1. **[배포 전 필수]** 회원 탈퇴 DB 마이그레이션 — `user-withdrawal-migration.sql` 운영 DB 수동 실행
 2. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — `ddl-auto: update`로 자동 생성되지 않을 경우 수동 DDL 실행 필요
-3. 반려동물 삭제 버튼 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
-4. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-5. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-6. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-7. 8080 외부 포트 차단 여부 운영 환경에서 확인
-8. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
-9. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-10. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-11. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
-12. Phase F AI 리포트 설계
+3. **[배포 전 필수]** 운영 서버에 `spring.profiles.active=prod` 환경변수 설정 — DEBUG 비활성화, 파일 로그 활성화
+4. 반려동물 삭제 버튼 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
+5. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+6. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+7. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
+8. 8080 외부 포트 차단 여부 운영 환경에서 확인
+9. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
+10. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
+11. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+12. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
+13. Phase F AI 리포트 설계
