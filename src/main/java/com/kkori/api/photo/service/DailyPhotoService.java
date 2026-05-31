@@ -9,6 +9,7 @@ import com.kkori.api.common.exception.ErrorCode;
 import com.kkori.api.device.entity.Device;
 import com.kkori.api.device.repository.DeviceRepository;
 import com.kkori.api.pet.entity.Pet;
+import com.kkori.api.pet.event.PetImageCleanupEvent;
 import com.kkori.api.pet.repository.PetRepository;
 import com.kkori.api.photo.dto.request.CreateDailyPhotoRequest;
 import com.kkori.api.photo.dto.request.UpdateDailyPhotoRequest;
@@ -19,6 +20,7 @@ import com.kkori.api.photo.entity.DailyPhoto;
 import com.kkori.api.photo.repository.DailyPhotoRepository;
 import com.kkori.api.photo.storage.S3PhotoStorage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +39,7 @@ public class DailyPhotoService {
     private final CaregiverRepository caregiverRepository;
     private final DeviceRepository deviceRepository;
     private final S3PhotoStorage s3PhotoStorage;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public DailyPhotoResponse create(String deviceExternalId, CreateDailyPhotoRequest request) {
@@ -48,7 +51,7 @@ public class DailyPhotoService {
         Caregiver caregiver = caregiverRepository.findByExternalId(request.caregiverExternalId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CAREGIVER_001));
 
-        if (dailyPhotoRepository.existsByPetIdAndDate(pet.getId(), request.date())) {
+        if (dailyPhotoRepository.existsByPetIdAndDateAndDeletedAtIsNull(pet.getId(), request.date())) {
             throw new BusinessException(ErrorCode.PHOTO_002);
         }
 
@@ -92,6 +95,7 @@ public class DailyPhotoService {
         DailyPhoto photo = dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull(externalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         Pet pet = petRepository.findById(photo.getPetId())
+                .filter(p -> !p.isDeleted())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         return DailyPhotoShareResponse.of(photo, pet);
     }
@@ -132,13 +136,15 @@ public class DailyPhotoService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PHOTO_001));
         verifyPetOwnershipById(photo.getPetId(), device);
 
-        if (photo.getMediumUrl() != null) {
-            Pet pet = petRepository.findById(photo.getPetId())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-            s3PhotoStorage.delete(pet.getExternalId(), externalId);
-        }
+        Pet pet = petRepository.findById(photo.getPetId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
 
         dailyPhotoRepository.delete(photo);
+
+        if (photo.getMediumUrl() != null) {
+            eventPublisher.publishEvent(new PetImageCleanupEvent(
+                    List.of(new PetImageCleanupEvent.ImageKey(pet.getExternalId(), externalId))));
+        }
     }
 
     private Device resolveDeviceForRequest(String deviceExternalId) {

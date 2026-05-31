@@ -69,8 +69,11 @@ public class S3PhotoStorageImpl implements S3PhotoStorage {
                     .bucket(properties.bucket())
                     .key(key)
                     .build());
-        } catch (S3Exception ignored) {
-            // 이미 없는 키이거나 권한 문제 — DB 삭제는 계속 진행
+        } catch (S3Exception e) {
+            String errorCode = e.awsErrorDetails().errorCode();
+            if (!"NoSuchKey".equals(errorCode)) {
+                log.warn("S3 delete failed: key={}, errorCode={}", key, errorCode);
+            }
         }
     }
 

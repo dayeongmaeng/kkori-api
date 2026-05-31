@@ -25,6 +25,7 @@ class GoogleOAuthVerifierTest {
                           "sub": "google-user-1",
                           "aud": "google-client-id",
                           "email": "a@example.com",
+                          "email_verified": "true",
                           "name": "Kkori",
                           "picture": "https://example.com/profile.png"
                         }
@@ -50,6 +51,7 @@ class GoogleOAuthVerifierTest {
                           "sub": "google-user-2",
                           "aud": "ios-client-id",
                           "email": "b@example.com",
+                          "email_verified": "true",
                           "name": "꼬리",
                           "picture": "https://example.com/profile2.png"
                         }

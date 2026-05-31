@@ -17,9 +17,11 @@ import com.kkori.api.log.entity.DailyLogPhoto;
 import com.kkori.api.log.repository.DailyLogPhotoRepository;
 import com.kkori.api.log.repository.DailyLogRepository;
 import com.kkori.api.pet.entity.Pet;
+import com.kkori.api.pet.event.PetImageCleanupEvent;
 import com.kkori.api.pet.repository.PetRepository;
 import com.kkori.api.photo.storage.S3PhotoStorage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,6 +43,7 @@ public class DailyLogService {
     private final CaregiverRepository caregiverRepository;
     private final DeviceRepository deviceRepository;
     private final S3PhotoStorage s3PhotoStorage;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public DailyLogResponse create(String deviceExternalId, CreateDailyLogRequest request) {
@@ -52,7 +55,7 @@ public class DailyLogService {
         Caregiver caregiver = caregiverRepository.findByExternalId(request.caregiverExternalId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CAREGIVER_001));
 
-        if (dailyLogRepository.existsByPetIdAndDate(pet.getId(), request.date())) {
+        if (dailyLogRepository.existsByPetIdAndDateAndDeletedAtIsNull(pet.getId(), request.date())) {
             throw new BusinessException(ErrorCode.LOG_002);
         }
 
@@ -173,8 +176,10 @@ public class DailyLogService {
 
         Pet pet = petRepository.findById(photo.getPetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-        s3PhotoStorage.delete(pet.getExternalId(), photo.getExternalId());
-        dailyLogPhotoRepository.delete(photo);
+
+        photo.softDelete();
+        eventPublisher.publishEvent(new PetImageCleanupEvent(
+                List.of(new PetImageCleanupEvent.ImageKey(pet.getExternalId(), photo.getExternalId()))));
     }
 
     @Transactional
@@ -186,10 +191,19 @@ public class DailyLogService {
 
         Pet pet = petRepository.findById(log.getPetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
-        dailyLogPhotoRepository.findByDailyLogIdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(log.getId())
-                .forEach(photo -> s3PhotoStorage.delete(pet.getExternalId(), photo.getExternalId()));
+
+        List<PetImageCleanupEvent.ImageKey> imageKeys = dailyLogPhotoRepository
+                .findByDailyLogIdAndDeletedAtIsNullOrderBySortOrderAscIdAsc(log.getId())
+                .stream()
+                .map(photo -> new PetImageCleanupEvent.ImageKey(pet.getExternalId(), photo.getExternalId()))
+                .toList();
+
         dailyLogPhotoRepository.deleteByDailyLogId(log.getId());
         dailyLogRepository.delete(log);
+
+        if (!imageKeys.isEmpty()) {
+            eventPublisher.publishEvent(new PetImageCleanupEvent(imageKeys));
+        }
     }
 
     private DailyLogResponse toResponse(DailyLog log) {

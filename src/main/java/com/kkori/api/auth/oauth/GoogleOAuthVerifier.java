@@ -64,6 +64,11 @@ public class GoogleOAuthVerifier implements OAuthVerifier {
             throw new BusinessException(ErrorCode.AUTH_002);
         }
 
+        if (!"true".equals(response.emailVerified())) {
+            log.warn("OAuth verification failed: provider=GOOGLE reason=email_not_verified");
+            throw new BusinessException(ErrorCode.AUTH_002);
+        }
+
         List<ClientIdEntry> allowedIds = resolveAllowedClientIds();
         ClientIdEntry matched = allowedIds.stream()
                 .filter(entry -> entry.clientId().equals(response.aud()))

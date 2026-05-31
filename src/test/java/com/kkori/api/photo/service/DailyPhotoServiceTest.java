@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -47,6 +48,9 @@ class DailyPhotoServiceTest {
     @Mock
     private S3PhotoStorage s3PhotoStorage;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private DailyPhotoService dailyPhotoService;
 
     @BeforeEach
@@ -56,7 +60,8 @@ class DailyPhotoServiceTest {
                 petRepository,
                 caregiverRepository,
                 deviceRepository,
-                s3PhotoStorage
+                s3PhotoStorage,
+                eventPublisher
         );
     }
 
@@ -67,7 +72,7 @@ class DailyPhotoServiceTest {
         DailyPhoto photo = photo(100L, "photo-1", 10L, "before");
         photo.updateUrls("https://cdn.example.com/medium.jpg", "https://cdn.example.com/thumb.jpg");
         when(deviceRepository.findByExternalId("device-1")).thenReturn(Optional.of(device));
-        when(dailyPhotoRepository.findByExternalId("photo-1")).thenReturn(Optional.of(photo));
+        when(dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull("photo-1")).thenReturn(Optional.of(photo));
         when(petRepository.findById(10L)).thenReturn(Optional.of(pet));
 
         DailyPhotoResponse response = dailyPhotoService.update(
@@ -87,7 +92,7 @@ class DailyPhotoServiceTest {
         Pet pet = pet(10L, 1L, "pet-1", "꼬리");
         DailyPhoto photo = photo(100L, "photo-1", 10L, "before");
         when(deviceRepository.findByExternalId("device-2")).thenReturn(Optional.of(otherDevice));
-        when(dailyPhotoRepository.findByExternalId("photo-1")).thenReturn(Optional.of(photo));
+        when(dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull("photo-1")).thenReturn(Optional.of(photo));
         when(petRepository.findById(10L)).thenReturn(Optional.of(pet));
 
         assertThatThrownBy(() -> dailyPhotoService.update(
@@ -104,7 +109,7 @@ class DailyPhotoServiceTest {
         Pet pet = pet(10L, 1L, "pet-1", "꼬리");
         DailyPhoto photo = photo(100L, "photo-1", 10L, "caption");
         photo.updateUrls("https://cdn.example.com/medium.jpg", "https://cdn.example.com/thumb.jpg");
-        when(dailyPhotoRepository.findByExternalId("photo-1")).thenReturn(Optional.of(photo));
+        when(dailyPhotoRepository.findByExternalIdAndDeletedAtIsNull("photo-1")).thenReturn(Optional.of(photo));
         when(petRepository.findById(10L)).thenReturn(Optional.of(pet));
 
         DailyPhotoShareResponse response = dailyPhotoService.findShareByExternalId("photo-1");
