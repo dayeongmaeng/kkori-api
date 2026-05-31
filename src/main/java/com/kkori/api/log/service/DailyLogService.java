@@ -75,6 +75,16 @@ public class DailyLogService {
                 .condition(request.condition())
                 .weightKg(request.weightKg())
                 .memo(request.memo())
+                .mealNote(request.mealNote())
+                .walkNote(request.walkNote())
+                .pooNote(request.pooNote())
+                .urineNote(request.urineNote())
+                .waterNote(request.waterNote())
+                .playMinutes(request.playMinutes())
+                .playNote(request.playNote())
+                .urineAmount(request.urineAmount())
+                .vomitCount(request.vomitCount())
+                .vomitNote(request.vomitNote())
                 .build();
 
         return toResponse(dailyLogRepository.save(log));
@@ -107,7 +117,11 @@ public class DailyLogService {
         verifyPetOwnershipById(log.getPetId(), device);
         log.update(request.meal(), request.water(), request.walkMinutes(),
                 request.pooCondition(), request.urineColor(),
-                request.condition(), request.weightKg(), request.memo());
+                request.condition(), request.weightKg(), request.memo(),
+                request.mealNote(), request.walkNote(), request.pooNote(),
+                request.urineNote(), request.waterNote(), request.playMinutes(),
+                request.playNote(), request.urineAmount(), request.vomitCount(),
+                request.vomitNote());
         return toResponse(log);
     }
 

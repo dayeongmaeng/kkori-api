@@ -59,11 +59,45 @@ public class DailyLog extends SoftDeletableEntity {
     @Column(columnDefinition = "TEXT")
     private String memo;
 
+    @Column(name = "meal_note", columnDefinition = "TEXT")
+    private String mealNote;
+
+    @Column(name = "walk_note", columnDefinition = "TEXT")
+    private String walkNote;
+
+    @Column(name = "poo_note", columnDefinition = "TEXT")
+    private String pooNote;
+
+    @Column(name = "urine_note", columnDefinition = "TEXT")
+    private String urineNote;
+
+    @Column(name = "water_note", columnDefinition = "TEXT")
+    private String waterNote;
+
+    @Column(name = "play_minutes")
+    private Integer playMinutes;
+
+    @Column(name = "play_note", columnDefinition = "TEXT")
+    private String playNote;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "urine_amount")
+    private UrineAmount urineAmount;
+
+    @Column(name = "vomit_count")
+    private Integer vomitCount;
+
+    @Column(name = "vomit_note", columnDefinition = "TEXT")
+    private String vomitNote;
+
     @Builder
     public DailyLog(String externalId, Long petId, Long caregiverId, LocalDate date,
                     MealAmount meal, WaterAmount water, Integer walkMinutes,
                     StoolCondition pooCondition, UrineColor urineColor,
-                    Integer condition, BigDecimal weightKg, String memo) {
+                    Integer condition, BigDecimal weightKg, String memo,
+                    String mealNote, String walkNote, String pooNote, String urineNote,
+                    String waterNote, Integer playMinutes, String playNote,
+                    UrineAmount urineAmount, Integer vomitCount, String vomitNote) {
         this.externalId = externalId;
         this.petId = petId;
         this.caregiverId = caregiverId;
@@ -76,11 +110,24 @@ public class DailyLog extends SoftDeletableEntity {
         this.condition = condition;
         this.weightKg = weightKg;
         this.memo = memo;
+        this.mealNote = mealNote;
+        this.walkNote = walkNote;
+        this.pooNote = pooNote;
+        this.urineNote = urineNote;
+        this.waterNote = waterNote;
+        this.playMinutes = playMinutes;
+        this.playNote = playNote;
+        this.urineAmount = urineAmount;
+        this.vomitCount = vomitCount;
+        this.vomitNote = vomitNote;
     }
 
     public void update(MealAmount meal, WaterAmount water, Integer walkMinutes,
                        StoolCondition pooCondition, UrineColor urineColor,
-                       Integer condition, BigDecimal weightKg, String memo) {
+                       Integer condition, BigDecimal weightKg, String memo,
+                       String mealNote, String walkNote, String pooNote, String urineNote,
+                       String waterNote, Integer playMinutes, String playNote,
+                       UrineAmount urineAmount, Integer vomitCount, String vomitNote) {
         this.meal = meal;
         this.water = water;
         this.walkMinutes = walkMinutes;
@@ -89,5 +136,15 @@ public class DailyLog extends SoftDeletableEntity {
         this.condition = condition;
         this.weightKg = weightKg;
         this.memo = memo;
+        this.mealNote = mealNote;
+        this.walkNote = walkNote;
+        this.pooNote = pooNote;
+        this.urineNote = urineNote;
+        this.waterNote = waterNote;
+        this.playMinutes = playMinutes;
+        this.playNote = playNote;
+        this.urineAmount = urineAmount;
+        this.vomitCount = vomitCount;
+        this.vomitNote = vomitNote;
     }
 }

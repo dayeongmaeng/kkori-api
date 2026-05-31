@@ -14,5 +14,15 @@ public record UpdateDailyLogRequest(
         UrineColor urineColor,
         @Min(1) @Max(5) Integer condition,
         BigDecimal weightKg,
-        String memo
+        String memo,
+        String mealNote,
+        String walkNote,
+        String pooNote,
+        String urineNote,
+        String waterNote,
+        @Min(0) Integer playMinutes,
+        String playNote,
+        UrineAmount urineAmount,
+        @Min(0) Integer vomitCount,
+        String vomitNote
 ) {}
