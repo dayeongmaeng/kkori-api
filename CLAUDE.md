@@ -3,7 +3,7 @@
 반려동물 일상 기록 앱 "꼬리"의 백엔드 서버.
 
 기준 문서: `apiserver.md`
-마지막 갱신: 2026-05-27
+마지막 갱신: 2026-06-02
 
 ## 프로젝트 컨텍스트
 
@@ -107,7 +107,12 @@
 - **Caregiver**: 보호자 (가족 공유 대비, 한 Device에 여러 Caregiver 가능). soft delete 적용.
 - **Pet**: 반려동물. `userId` nullable + 기존 `deviceId` fallback. soft delete 적용.
 - **DailyPhoto**: 하루 한 장 데일리 포토 (`petId + date` unique), caption, mediumUrl, thumbnailUrl. soft delete 적용.
-- **DailyLog**: 일일 건강 기록 (식사/물/산책/배변/소변/컨디션/체중/메모). soft delete 적용.
+- **DailyLog**: 일일 건강 기록. soft delete 적용.
+  - 기본 필드: `meal`, `water`, `walkMinutes`, `pooCondition`, `urineColor`, `urineAmount`, `condition`, `weightKg`, `memo`
+  - 확장 메모 필드: `mealNote`, `walkNote`, `pooNote`, `urineNote`, `waterNote`, `playMinutes`, `playNote`, `vomitCount`, `vomitNote`
+  - `urineAmount` enum: `LITTLE`, `NORMAL`, `MUCH`
+  - `unique(petId, date)` 제약
+  - 운영 DB 적용 필수: `daily-log-note-fields-migration.sql`
 - **DailyLogPhoto**: 기록탭 사진. DailyLog별 최대 3장, S3 medium/thumbnail URL 저장. soft delete 적용.
 - **UserOAuthToken**: Google OAuth access token 암호화 저장 (`user_oauth_token` 테이블). AES-256-GCM 암호화. UNIQUE(user_id, provider). 필드: `encrypted_access_token`, `encrypted_refresh_token`, `access_token_expires_at`, `scope`, `revoked_at`. revoke 성공 시 `revokedAt` 기록. Google revoke 시 사용.
 - **RevokedRefreshToken**: 로그아웃된 refreshToken 해시 저장
@@ -119,7 +124,7 @@
 - `birthDateUnknown=false`이면 `birthDate` 필수 검증 있음
 - `breed`는 서버 enum/목록으로 관리하지 않고 string 저장만 담당
 - 품종 추천/자동완성은 클라이언트 상수 기반으로 처리한다.
-- 코드상 `Species`는 `DOG`, `CAT` 둘 다 열려 있다. "현재 강아지만" 정책과 맞출지 확인 필요.
+- `Species`: `DOG`, `CAT` 모두 공식 지원 (2026-05-31 고양이 지원 추가)
 
 ## 사진 기능 상태
 
@@ -204,7 +209,7 @@ dto
 - `docker-compose.yml`은 현재 `AWS_REGION`을 전달한다.
 - `AWS_REGION`과 `AWS_S3_REGION` 표기가 섞여 있으므로 정리 필요.
 - `AWS_S3_BUCKET`은 `s3://`, URL, 경로 없이 순수 버킷명만 사용한다.
-- `application.yaml`의 multipart 설정은 현재 `server.servlet.multipart` 아래에 있다. Spring Boot 표준 위치인 `spring.servlet.multipart`로 맞출지 확인 필요.
+- multipart 설정은 `spring.servlet.multipart` 위치로 이동 완료 (2026-05-31 QA).
 
 ## 테스트 상태
 
@@ -391,14 +396,11 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 
 1. **[배포 전 필수]** 회원 탈퇴 DB 마이그레이션 — `user-withdrawal-migration.sql` 운영 DB 수동 실행
 2. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — `ddl-auto: update`로 자동 생성되지 않을 경우 수동 DDL 실행 필요
-3. **[배포 전 필수]** 운영 서버에 `spring.profiles.active=prod` 환경변수 설정 — DEBUG 비활성화, 파일 로그 활성화
+3. **[배포 전 필수]** DailyLog 확장 필드 운영 DB 마이그레이션 — `daily-log-note-fields-migration.sql` 운영 DB 수동 실행
 4. 반려동물 삭제 버튼 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
 5. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
 6. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-7. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-8. 8080 외부 포트 차단 여부 운영 환경에서 확인
-9. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
-10. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-11. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-12. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
-13. Phase F AI 리포트 설계
+7. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
+8. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
+9. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+10. Phase F AI 리포트 설계

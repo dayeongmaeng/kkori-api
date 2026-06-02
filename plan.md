@@ -1,7 +1,7 @@
 # 꼬리 API 개발 로드맵
 
 기준 문서: `apiserver.md`
-마지막 업데이트: 2026-05-27
+마지막 업데이트: 2026-06-02
 
 ## Phase A: 로컬 백엔드 구축
 
@@ -83,9 +83,8 @@
 - [x] C-6: 8080 외부 포트 닫기 확인
   - 22, 80, 443은 열어 둔다.
   - 8080은 Nginx 내부 프록시로만 사용한다.
-  - 코드의 `docker-compose.yml`은 현재 `8080:8080`으로 바인딩한다.
-  - 실제 외부 차단 여부는 Lightsail 방화벽/Nginx 기준으로 확인 필요.
-- [x] C-7: 모니터링/로그 체계 정리
+  - `docker-compose.yml` → `127.0.0.1:8080:8080` 바인딩으로 변경 완료 (2026-05-31 QA)
+- [x] C-7: 모니터링/로그 체계 정리 + prod 프로파일 설정 완료
   - requestId 기반 MDC 추적 (`RequestLoggingFilter`, `X-Request-Id` 헤더)
   - 파일 로그: `logs/app.log`, `logs/error.log` — 일자별 rolling, 30일 보관 (`logback-spring.xml`)
   - 레벨 정책: JWT/OAuth 인증 실패 → WARN, 5xx/미처리 예외 → ERROR, 주요 성공 흐름 → INFO
@@ -96,9 +95,8 @@
   - `application.yaml`은 `AWS_S3_REGION`을 읽음
   - `docker-compose.yml`은 `AWS_REGION`을 전달함
   - `AWS_REGION` / `AWS_S3_REGION` 중 하나로 일관화 필요
-- [ ] C-10: multipart 설정 위치 확인
-  - 현재 `application.yaml`은 `server.servlet.multipart` 아래에 있음
-  - Spring Boot 표준 위치인 `spring.servlet.multipart` 적용 여부 확인 필요
+- [x] C-10: multipart 설정 위치 수정
+  - `spring.servlet.multipart`로 이동 완료 (2026-05-31 QA)
 
 ## Phase D: 인증
 
@@ -194,6 +192,7 @@
 - [ ] D-18: 운영 DB 마이그레이션 (배포 전 필수)
   - `user-withdrawal-migration.sql` 운영 적용
   - `user_oauth_token` 테이블 DDL 운영 적용 여부 확인
+  - `daily-log-note-fields-migration.sql` 운영 적용 (고양이 추가 확장 필드)
 - [ ] D-19: Google revoke 실기기 QA
   - UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인
 - [x] D-20: Google 로그인 Web/iOS 분리 지원
@@ -257,10 +256,7 @@
   - 품종 자유입력 허용
   - MVP에서는 입력 부담 최소화 우선
   - 알레르기/약/질환 등 건강 세부 필드는 추후 추가
-- [ ] P-4: 정책/코드 불일치 확인
-  - 문서 정책은 현재 강아지만 유지
-  - 코드상 `Species`는 `DOG`, `CAT` 둘 다 열려 있음
-  - 정책에 맞춰 서버 검증을 추가할지, 문서를 `DOG/CAT enum 준비`로 바꿀지 결정 필요
+- [x] P-4: Species 정책 결정 — `DOG`, `CAT` 모두 공식 지원으로 결정 (2026-05-31 고양이 추가)
 - [ ] P-5: 프로필 API/클라이언트 QA
   - 요청/응답, 저장/수정, 기존 데이터 호환성 확인
 
@@ -296,7 +292,7 @@
 - [x] 로그아웃 API와 refreshToken 해시 폐기 구현
 - [x] 회원 탈퇴 API 서버 구현 완료 (D-13)
 - [ ] **회원 탈퇴 DB 마이그레이션 (D-18)** — 배포 전 필수
-- [ ] **운영 서버 `spring.profiles.active=prod` 설정** — 배포 전 필수 (DEBUG 비활성화, 파일 로그)
+- [x] **`SPRING_PROFILES_ACTIVE=prod` docker-compose에 설정 완료** (2026-05-31 QA)
 - [x] 회원 탈퇴 클라이언트 UI (D-15)
 - [x] Kakao unlink 실제 구현 (D-16)
 - [x] Google revoke 구조 구현 (D-16)
@@ -310,14 +306,13 @@
 
 ## 다음 작업 후보
 
-1. **[배포 전 필수]** 운영 DB 마이그레이션 (D-18) — `user-withdrawal-migration.sql` + `user_oauth_token` DDL 수동 실행
-2. **[배포 전 필수]** 운영 서버에 `spring.profiles.active=prod` 설정 — 파일 로그 활성화, DEBUG 비활성화
-3. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
-4. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-5. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-6. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-7. 8080 외부 포트 차단 여부 운영 환경에서 확인
-8. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA (D-19)
-9. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-10. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-11. Phase F AI 리포트 설계
+1. **[배포 전 필수]** 운영 DB 마이그레이션 (D-18) — 아래 3개 스크립트 모두 운영 DB 수동 실행
+   - `user-withdrawal-migration.sql`
+   - `user_oauth_token` DDL 수동 실행 여부 확인
+   - `daily-log-note-fields-migration.sql` (고양이 추가 확장 필드)
+2. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
+3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+5. 실제 Google/Kakao OAuth 실기기 로그인 QA + Google revoke 실기기 QA (D-19)
+6. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+7. Phase F AI 리포트 설계

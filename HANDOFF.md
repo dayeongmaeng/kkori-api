@@ -3,7 +3,7 @@
 세션 종료 또는 컨텍스트 전환 시 다음 세션에서 바로 이어받기 위한 최신 상태 기록.
 
 기준 문서: `apiserver.md`
-마지막 업데이트: 2026-05-27
+마지막 업데이트: 2026-06-02
 
 ## 현재 운영 상태
 
@@ -29,8 +29,7 @@
 
 - 열려 있어야 함: 22(SSH), 80(HTTP/Certbot 갱신/HTTPS redirect), 443(HTTPS API)
 - Spring Boot 8080은 외부 공개 대상이 아니다. Nginx 내부 프록시 포트로만 사용한다.
-- 코드의 `docker-compose.yml`은 현재 API를 `8080:8080`으로 바인딩한다.
-- 운영에서 8080 외부 공개가 실제 차단되어 있는지는 Lightsail 방화벽/Nginx 기준으로 확인 필요하다.
+- `docker-compose.yml`은 `127.0.0.1:8080:8080`으로 바인딩 (로컬호스트 전용, 외부 차단) — 2026-05-31 QA에서 적용.
 
 ## 현재 코드 기준 진행상황
 
@@ -41,6 +40,8 @@
 - Phase D+: 회원 탈퇴 API 서버 구현 완료 + 클라이언트 UI 연동 완료 (DB 마이그레이션 운영 적용 대기)
 - Phase E: S3 사진 업로드 및 후속 UX 안정화 완료
 - Phase C+: requestId 기반 로그 정책 적용 완료 (2026-05-27)
+- Phase C+: 8080 외부 노출 차단 (127.0.0.1 바인딩), prod 프로파일 docker-compose 설정 완료 (2026-05-31)
+- Phase D+ (고양이): DailyLog 확장 필드 추가 + UrineAmount enum + migration SQL (2026-05-31)
 - Phase F: AI 리포트 미진행
 
 ## 로그 정책 (2026-05-27 적용)
@@ -192,6 +193,14 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 
 회원 탈퇴 시에도 동일한 cascade 로직을 내부에서 호출하므로 클라이언트가 반려동물 삭제 API를 별도 호출할 필요 없다 (`PetService.deleteAllForUser()`).
 
+## DailyLog 확장 필드 (2026-05-31 추가)
+
+고양이 지원 추가와 함께 DailyLog에 상세 건강 메모 필드가 추가됨.
+
+- 신규 enum: `UrineAmount` (LITTLE, NORMAL, MUCH)
+- 신규 필드: `urineAmount`, `mealNote`, `walkNote`, `pooNote`, `urineNote`, `waterNote`, `playMinutes`, `playNote`, `vomitCount`, `vomitNote`
+- **운영 DB 적용 필수**: `src/main/resources/db/daily-log-note-fields-migration.sql`
+
 ## Pet 프로필 상태
 
 - 서버 코드 기준 프로필 고도화 구현 완료
@@ -207,7 +216,7 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
   - `photoBase64`
 - `birthDateUnknown=false`이면 `birthDate` 필수 검증 있음
 - `breed`는 서버 enum/목록으로 관리하지 않고 string 저장만 담당
-- 코드상 `Species`는 `DOG`, `CAT` 둘 다 열려 있다. "현재 강아지만" 정책과 맞출지 확인 필요.
+- `Species`: `DOG`, `CAT` 모두 공식 지원 (2026-05-31 고양이 추가)
 
 ## 사진 기능 상태
 
@@ -268,7 +277,7 @@ AWS_S3_BUCKET=버킷명만
 - `application.yaml`은 S3 region으로 `AWS_S3_REGION`을 읽는다.
 - `docker-compose.yml`은 현재 `AWS_REGION`을 전달한다.
 - `AWS_REGION` / `AWS_S3_REGION` 표기를 정리해야 한다.
-- `application.yaml`의 multipart 설정은 현재 `server.servlet.multipart` 아래에 있다. Spring Boot 표준 위치인 `spring.servlet.multipart`로 맞출지 확인 필요.
+- ~~multipart 설정~~: `spring.servlet.multipart`로 이동 완료 (2026-05-31 QA).
 - `GOOGLE_CLIENT_ID` 단일 키 대신 `GOOGLE_WEB_CLIENT_ID` + `GOOGLE_IOS_CLIENT_ID`로 분리됨. 운영 환경변수 갱신 필요.
 - `OAUTH_TOKEN_ENCRYPTION_KEY` 신규 환경변수 추가 필요. AES-256-GCM 암호화 키.
 
@@ -330,19 +339,17 @@ npx expo start -c
 
 ## 다음 작업 후보
 
-1. **[배포 전 필수]** 회원 탈퇴 DB 마이그레이션 — 운영 DB에 `user-withdrawal-migration.sql` 수동 실행
-2. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — 신규 테이블 DDL 수동 실행 필요 여부 확인
-3. **[배포 전 필수]** 운영 서버에 `spring.profiles.active=prod` 환경변수 설정 — DEBUG 비활성화, 파일 로그 활성화
-4. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
-5. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-6. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-7. multipart 설정 위치 확인 및 필요 시 `spring.servlet.multipart`로 이동
-8. 8080 외부 포트 차단 여부 운영 환경에서 확인
-9. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
-10. 운영 `JWT_SECRET`, `GOOGLE_CLIENT_ID`, Kakao 키 설정 반영 및 배포 환경 확인
-11. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-12. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 확인)
-13. Phase F AI 리포트 설계
+1. **[배포 전 필수]** 운영 DB 마이그레이션 — 아래 3개 스크립트 모두 운영 DB 수동 실행
+   - `user-withdrawal-migration.sql`
+   - `user_oauth_token` 테이블 DDL 수동 실행 여부 확인
+   - `daily-log-note-fields-migration.sql` (DailyLog 확장 필드)
+2. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
+3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+5. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
+6. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 확인)
+7. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+8. Phase F AI 리포트 설계
 
 ## 운영 주의사항
 
@@ -354,6 +361,8 @@ npx expo start -c
 - local/dev/prod 모두 `JWT_SECRET=<32자 이상 랜덤 문자열>`이 필요하다.
 - Spring Boot 8080은 외부 공개 대상이 아니다. Nginx 내부 프록시 포트로만 사용한다.
 - **회원 탈퇴 API 활성화 전 DB 마이그레이션 선행 필수** — 없으면 탈퇴 시 500 오류 발생.
+- `docker-compose.yml`에 `SPRING_PROFILES_ACTIVE: prod` 설정 완료 (2026-05-31). Swagger UI는 prod에서 비활성화됨.
+- `daily-log-note-fields-migration.sql` 운영 DB 수동 실행 필요 (고양이 추가 확장 필드).
 
 ## 작업 스타일 / 프롬프트 작성 규칙
 
