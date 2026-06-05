@@ -18,6 +18,7 @@ public enum ErrorCode {
     USER_001(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     USER_002(HttpStatus.CONFLICT, "이미 탈퇴한 사용자입니다."),
     PET_001(HttpStatus.NOT_FOUND, "반려동물을 찾을 수 없습니다."),
+    PET_003(HttpStatus.BAD_REQUEST, "반려동물은 최대 3마리까지 등록할 수 있습니다."),
     CAREGIVER_001(HttpStatus.NOT_FOUND, "보호자를 찾을 수 없습니다."),
     CAREGIVER_002(HttpStatus.CONFLICT, "이미 존재하는 보호자 ID입니다."),
     PET_002(HttpStatus.CONFLICT, "이미 존재하는 반려동물 ID입니다."),

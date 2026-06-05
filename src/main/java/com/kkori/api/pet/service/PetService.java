@@ -31,6 +31,8 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class PetService {
 
+    private static final int MAX_PETS_PER_USER = 3;
+
     private final PetRepository petRepository;
     private final DeviceRepository deviceRepository;
     private final DailyLogRepository dailyLogRepository;
@@ -51,11 +53,24 @@ public class PetService {
             throw new BusinessException(ErrorCode.PET_002);
         }
 
+        Long effectiveUserId = currentUser.map(AuthenticatedUser::userId)
+                .orElse(device == null ? null : device.getUserId());
+        long activePetCount;
+        if (effectiveUserId != null) {
+            activePetCount = petRepository.countByUserIdAndDeletedAtIsNull(effectiveUserId);
+        } else if (device != null) {
+            activePetCount = petRepository.countByDeviceIdAndDeletedAtIsNull(device.getId());
+        } else {
+            activePetCount = 0;
+        }
+        if (activePetCount >= MAX_PETS_PER_USER) {
+            throw new BusinessException(ErrorCode.PET_003);
+        }
+
         Pet pet = Pet.builder()
                 .externalId(externalId)
                 .deviceId(device == null ? null : device.getId())
-                .userId(currentUser.map(AuthenticatedUser::userId)
-                        .orElse(device == null ? null : device.getUserId()))
+                .userId(effectiveUserId)
                 .name(request.name())
                 .species(request.species())
                 .gender(request.gender())
