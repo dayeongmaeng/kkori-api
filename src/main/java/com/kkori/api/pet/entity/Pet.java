@@ -50,6 +50,9 @@ public class Pet extends SoftDeletableEntity {
     @Column(precision = 5, scale = 2)
     private BigDecimal weightKg;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean weightKgUnknown = false;
+
     @Column(nullable = false)
     private boolean neutered;
 
@@ -62,7 +65,7 @@ public class Pet extends SoftDeletableEntity {
     @Builder
     public Pet(String externalId, Long deviceId, Long userId, String name, Species species, String breed,
                Gender gender, LocalDate birthDate, boolean birthDateUnknown, LocalDate adoptionDate,
-               BigDecimal weightKg, boolean neutered,
+               BigDecimal weightKg, boolean weightKgUnknown, boolean neutered,
                String medicalNotes, String photoBase64) {
         this.externalId = externalId;
         this.deviceId = deviceId;
@@ -75,6 +78,7 @@ public class Pet extends SoftDeletableEntity {
         this.birthDateUnknown = birthDateUnknown;
         this.adoptionDate = adoptionDate;
         this.weightKg = weightKg;
+        this.weightKgUnknown = weightKgUnknown;
         this.neutered = neutered;
         this.medicalNotes = medicalNotes;
         this.photoBase64 = photoBase64;
@@ -86,7 +90,7 @@ public class Pet extends SoftDeletableEntity {
 
     public void update(String name, Species species, Gender gender, String breed, LocalDate birthDate,
                        boolean birthDateUnknown, LocalDate adoptionDate,
-                       BigDecimal weightKg, boolean neutered, String medicalNotes, String photoBase64) {
+                       BigDecimal weightKg, boolean weightKgUnknown, boolean neutered, String medicalNotes, String photoBase64) {
         this.name = name;
         this.species = species;
         this.gender = gender;
@@ -95,6 +99,7 @@ public class Pet extends SoftDeletableEntity {
         this.birthDateUnknown = birthDateUnknown;
         this.adoptionDate = adoptionDate;
         this.weightKg = weightKg;
+        this.weightKgUnknown = weightKgUnknown;
         this.neutered = neutered;
         this.medicalNotes = medicalNotes;
         this.photoBase64 = photoBase64;

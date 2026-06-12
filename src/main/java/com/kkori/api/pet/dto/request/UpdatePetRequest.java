@@ -18,6 +18,7 @@ public record UpdatePetRequest(
         boolean birthDateUnknown,
         LocalDate adoptionDate,
         BigDecimal weightKg,
+        boolean weightKgUnknown,
         boolean neutered,
         String medicalNotes,
         String photoBase64
@@ -25,5 +26,10 @@ public record UpdatePetRequest(
     @AssertTrue(message = "birthDate is required when birthDateUnknown is false")
     public boolean isBirthDateValid() {
         return birthDateUnknown || birthDate != null;
+    }
+
+    @AssertTrue(message = "weightKg is required when weightKgUnknown is false")
+    public boolean isWeightKgValid() {
+        return weightKgUnknown || weightKg != null;
     }
 }

@@ -106,6 +106,8 @@
 - **Device**: 설치 기기/세션/푸시 보조 정보, `Device.userId`로 User 연결, 기존 `X-Device-Id` 흐름 유지
 - **Caregiver**: 보호자 (가족 공유 대비, 한 Device에 여러 Caregiver 가능). soft delete 적용.
 - **Pet**: 반려동물. `userId` nullable + 기존 `deviceId` fallback. soft delete 적용.
+  - `weightKgUnknown` 필드: boolean, NOT NULL, default false. true이면 `weightKg` null 허용.
+  - 운영 DB 적용 필수: `pet-weight-kg-unknown-migration.sql`
 - **DailyPhoto**: 하루 한 장 데일리 포토 (`petId + date` unique), caption, mediumUrl, thumbnailUrl. soft delete 적용.
 - **DailyLog**: 일일 건강 기록. soft delete 적용.
   - 기본 필드: `meal`, `water`, `walkMinutes`, `pooCondition`, `urineColor`, `urineAmount`, `condition`, `weightKg`, `memo`
@@ -120,8 +122,9 @@
 ## Pet 프로필 상태
 
 - 서버 코드 기준 프로필 고도화 구현 완료
-- 필드: `gender`, `breed`, `birthDate`, `birthDateUnknown`, `adoptionDate`, `weightKg`, `neutered`, `medicalNotes`, `photoBase64`
+- 필드: `gender`, `breed`, `birthDate`, `birthDateUnknown`, `adoptionDate`, `weightKg`, `weightKgUnknown`, `neutered`, `medicalNotes`, `photoBase64`
 - `birthDateUnknown=false`이면 `birthDate` 필수 검증 있음
+- `weightKgUnknown=false`이면 `weightKg` 필수 검증 있음. `weightKgUnknown=true`이면 서비스에서 `weightKg`를 null로 세팅.
 - `breed`는 서버 enum/목록으로 관리하지 않고 string 저장만 담당
 - 품종 추천/자동완성은 클라이언트 상수 기반으로 처리한다.
 - `Species`: `DOG`, `CAT` 모두 공식 지원 (2026-05-31 고양이 지원 추가)
@@ -395,12 +398,13 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 ## 다음 작업 후보
 
 1. **[배포 전 필수]** 회원 탈퇴 DB 마이그레이션 — `user-withdrawal-migration.sql` 운영 DB 수동 실행
-2. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — `ddl-auto: update`로 자동 생성되지 않을 경우 수동 DDL 실행 필요
-3. **[배포 전 필수]** DailyLog 확장 필드 운영 DB 마이그레이션 — `daily-log-note-fields-migration.sql` 운영 DB 수동 실행
-4. 반려동물 삭제 버튼 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
-5. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-6. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-7. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
-8. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
-9. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-10. Phase F AI 리포트 설계
+2. **[배포 전 필수]** Pet 체중 미상 마이그레이션 — `pet-weight-kg-unknown-migration.sql` 운영 DB 수동 실행
+3. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — `ddl-auto: update`로 자동 생성되지 않을 경우 수동 DDL 실행 필요
+4. **[배포 전 필수]** DailyLog 확장 필드 운영 DB 마이그레이션 — `daily-log-note-fields-migration.sql` 운영 DB 수동 실행
+5. 반려동물 삭제 버튼 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
+6. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+7. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+8. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
+9. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
+10. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+11. Phase F AI 리포트 설계

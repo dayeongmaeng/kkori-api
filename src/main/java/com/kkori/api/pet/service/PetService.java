@@ -16,6 +16,7 @@ import com.kkori.api.pet.entity.Pet;
 import com.kkori.api.pet.event.PetImageCleanupEvent;
 import com.kkori.api.pet.repository.PetRepository;
 import com.kkori.api.photo.repository.DailyPhotoRepository;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -67,6 +68,7 @@ public class PetService {
             throw new BusinessException(ErrorCode.PET_003);
         }
 
+        BigDecimal effectiveWeightKg = request.weightKgUnknown() ? null : request.weightKg();
         Pet pet = Pet.builder()
                 .externalId(externalId)
                 .deviceId(device == null ? null : device.getId())
@@ -78,7 +80,8 @@ public class PetService {
                 .birthDate(request.birthDate())
                 .birthDateUnknown(request.birthDateUnknown())
                 .adoptionDate(request.adoptionDate())
-                .weightKg(request.weightKg())
+                .weightKg(effectiveWeightKg)
+                .weightKgUnknown(request.weightKgUnknown())
                 .neutered(request.neutered())
                 .medicalNotes(request.medicalNotes())
                 .photoBase64(request.photoBase64())
@@ -116,9 +119,10 @@ public class PetService {
         Device device = resolveDevice(deviceExternalId).orElse(null);
         Pet pet = findOwnedPet(externalId, device)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
+        BigDecimal effectiveWeightKg = request.weightKgUnknown() ? null : request.weightKg();
         pet.update(request.name(), request.species(), request.gender(), request.breed(), request.birthDate(),
                 request.birthDateUnknown(), request.adoptionDate(),
-                request.weightKg(), request.neutered(), request.medicalNotes(), request.photoBase64());
+                effectiveWeightKg, request.weightKgUnknown(), request.neutered(), request.medicalNotes(), request.photoBase64());
         return PetResponse.from(pet);
     }
 
