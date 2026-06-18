@@ -40,8 +40,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:8081",
                 "http://localhost:19006",
-                "http://localhost:3000",
-                "https://kkori.vercel.app"
+                "http://localhost:3000"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
