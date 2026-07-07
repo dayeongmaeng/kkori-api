@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,6 +53,39 @@ public class DailyLogService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
         verifyPetOwnership(pet, device);
 
+        DailyLog log = createLogEntity(pet, request);
+        return toResponse(log);
+    }
+
+    @Transactional
+    public DailyLogResponse createWithPhotos(String deviceExternalId, CreateDailyLogRequest request,
+                                             List<MultipartFile> mediums, List<MultipartFile> thumbnails) {
+        List<MultipartFile> mediumFiles = mediums == null ? List.of() : mediums;
+        List<MultipartFile> thumbnailFiles = thumbnails == null ? List.of() : thumbnails;
+        if (mediumFiles.size() != thumbnailFiles.size()) {
+            throw new BusinessException(ErrorCode.VALIDATION_001);
+        }
+        if (mediumFiles.size() > MAX_PHOTOS_PER_LOG) {
+            throw new BusinessException(ErrorCode.LOG_PHOTO_002);
+        }
+
+        Device device = resolveDeviceForRequest(deviceExternalId);
+        Pet pet = petRepository.findByExternalIdAndDeletedAtIsNull(request.petExternalId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
+        verifyPetOwnership(pet, device);
+
+        DailyLog log = createLogEntity(pet, request);
+
+        List<DailyLogPhotoResponse> photos = new ArrayList<>();
+        for (int i = 0; i < mediumFiles.size(); i++) {
+            DailyLogPhoto photo = savePhoto(pet, log, mediumFiles.get(i), thumbnailFiles.get(i), i);
+            photos.add(DailyLogPhotoResponse.from(photo));
+        }
+
+        return DailyLogResponse.from(log, photos);
+    }
+
+    private DailyLog createLogEntity(Pet pet, CreateDailyLogRequest request) {
         Caregiver caregiver = caregiverRepository.findByExternalId(request.caregiverExternalId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CAREGIVER_001));
 
@@ -90,7 +124,7 @@ public class DailyLogService {
                 .vomitNote(request.vomitNote())
                 .build();
 
-        return toResponse(dailyLogRepository.save(log));
+        return dailyLogRepository.save(log);
     }
 
     public List<DailyLogResponse> findByPet(String deviceExternalId, String petExternalId) {
@@ -144,6 +178,11 @@ public class DailyLogService {
         Pet pet = petRepository.findById(log.getPetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PET_001));
 
+        DailyLogPhoto photo = savePhoto(pet, log, medium, thumbnail, resolveNextSortOrder(currentPhotos));
+        return DailyLogPhotoResponse.from(photo);
+    }
+
+    private DailyLogPhoto savePhoto(Pet pet, DailyLog log, MultipartFile medium, MultipartFile thumbnail, int sortOrder) {
         String photoExternalId = UUID.randomUUID().toString();
         String mediumUrl = s3PhotoStorage.uploadMedium(pet.getExternalId(), photoExternalId, medium);
         String thumbnailUrl = s3PhotoStorage.uploadThumbnail(pet.getExternalId(), photoExternalId, thumbnail);
@@ -156,9 +195,9 @@ public class DailyLogService {
                 .date(log.getDate())
                 .mediumUrl(mediumUrl)
                 .thumbnailUrl(thumbnailUrl)
-                .sortOrder(resolveNextSortOrder(currentPhotos))
+                .sortOrder(sortOrder)
                 .build();
-        return DailyLogPhotoResponse.from(dailyLogPhotoRepository.save(photo));
+        return dailyLogPhotoRepository.save(photo);
     }
 
     @Transactional

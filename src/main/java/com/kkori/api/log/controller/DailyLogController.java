@@ -35,6 +35,17 @@ public class DailyLogController {
                 .body(ApiResponse.ok(dailyLogService.create(deviceId, request)));
     }
 
+    @Operation(summary = "일일 기록 등록 + 사진 업로드 (한 번에 처리)")
+    @PostMapping(value = "/with-photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<DailyLogResponse>> createWithPhotos(
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
+            @RequestPart("request") @Valid CreateDailyLogRequest request,
+            @RequestPart(value = "mediums", required = false) List<MultipartFile> mediums,
+            @RequestPart(value = "thumbnails", required = false) List<MultipartFile> thumbnails) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(dailyLogService.createWithPhotos(deviceId, request, mediums, thumbnails)));
+    }
+
     @Operation(summary = "반려동물별 일일 기록 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<DailyLogResponse>>> findByPet(
