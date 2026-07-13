@@ -1,7 +1,17 @@
 # 꼬리 API 개발 로드맵
 
 기준 문서: `apiserver.md`
-마지막 업데이트: 2026-06-02
+마지막 업데이트: 2026-07-13
+
+## Phase G: 출시
+
+- [x] G-1: 앱 출시 (2026-07-08)
+- [x] G-2: 배포 전 필수 운영 DB 마이그레이션 4건 적용 완료
+  - `user-withdrawal-migration.sql`
+  - `pet-weight-kg-unknown-migration.sql`
+  - `user_oauth_token` 테이블 DDL
+  - `daily-log-note-fields-migration.sql`
+- [ ] G-3: 출시 초기 크래시/에러 로그 모니터링
 
 ## Phase A: 로컬 백엔드 구축
 
@@ -35,11 +45,13 @@
   - `allowCredentials(true)`
   - OPTIONS preflight 통과
 - [x] A-7: 로컬 수동 테스트
-- [ ] A-8: 자동 테스트 코드 (일부 작성, 현재 1건 실패)
+- [ ] A-8: 자동 테스트 코드 (일부 작성, 현재 2건 실패)
   - AuthService, JWT issuer/verifier, OAuth verifier, JWT filter, PetService, DailyPhotoService/DTO 테스트 작성
-  - 2026-05-22 기준 26 tests completed, 1 failed
-  - 실패: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-  - 원인: 테스트용 `new ObjectMapper()`가 `ApiResponse.timestamp(LocalDateTime)` 직렬화 모듈을 못 찾음
+  - 2026-07-13 기준 27 tests completed, 2 failed
+  - 실패 1: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+    - 원인: 테스트용 `new ObjectMapper()`가 `ApiResponse.timestamp(LocalDateTime)` 직렬화 모듈을 못 찾음
+  - 실패 2: `KkoriApiApplicationTests.contextLoads()`
+    - 원인: 로컬 DB 미기동 상태에서 실행해 발생한 연결 실패, 코드 결함 아님
 - [ ] A-9: 테스트 보강
   - 실패 테스트 수정
   - MockMvc 컨트롤러 테스트 검토
@@ -169,7 +181,7 @@
   - 탈퇴 후 refresh 차단 (AuthService.refresh()에 isWithdrawn 가드 추가)
   - 탈퇴 후 logout NPE 수정 (provider null 가드 추가)
   - 재가입: provider+providerUserId null 처리로 동일 계정 재가입 허용
-- [ ] D-14: 회원 탈퇴 DB 마이그레이션 (운영 배포 전 필수)
+- [x] D-14: 회원 탈퇴 DB 마이그레이션 (앱 출시 전 적용 완료)
   - `ALTER TABLE users ALTER COLUMN provider DROP NOT NULL`
   - `ALTER TABLE users ALTER COLUMN provider_user_id DROP NOT NULL`
   - `UPDATE users SET status = 'ACTIVE' WHERE status IS NULL`
@@ -189,12 +201,16 @@
   - AES-256-GCM 암호화
   - revoke 성공 시 `revokedAt` 기록
   - 클라이언트에서 Google access token 전달 구조 추가
-- [ ] D-18: 운영 DB 마이그레이션 (배포 전 필수)
+- [x] D-18: 운영 DB 마이그레이션 (배포 전 필수, 앱 출시 2026-07-08 전 적용 완료)
   - `user-withdrawal-migration.sql` 운영 적용
-  - `user_oauth_token` 테이블 DDL 운영 적용 여부 확인
+  - `user_oauth_token` 테이블 DDL 운영 적용 완료
   - `daily-log-note-fields-migration.sql` 운영 적용 (고양이 추가 확장 필드)
 - [ ] D-19: Google revoke 실기기 QA
   - UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인
+- [x] D-21: 카카오 로그인 redirect 정적 페이지 (2026-06-18)
+  - `/oauth/kakao` → `static/oauth/kakao.html` forward
+  - 정적 페이지에서 `kkori://oauth/kakao` 딥링크로 포워딩
+  - JWT 인증 필터/CORS 허용 목록에서 vercel preview 도메인 제거
 - [x] D-20: Google 로그인 Web/iOS 분리 지원
   - Web: `response_type=id_token token`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, access token 서버 전달
   - iOS: native OAuth 흐름, `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, idToken 기반
@@ -231,6 +247,9 @@
 - [x] E-12: 기록 사진 삭제/재시도 UX
 - [x] E-13: 기록 사진 UI 수정
   - X 버튼 잘림 해결
+- [x] E-14: 기록탭 사진 저장 시점 변경 (2026-07-07)
+  - `POST /api/v1/daily-logs/with-photos` 추가 — 기록 등록 + 사진 업로드를 한 번에 처리 (multipart)
+  - 기존 `POST /api/v1/daily-logs` + 개별 사진 업로드 흐름과 병행 유지
 
 ## Phase F: AI 리포트
 
@@ -259,6 +278,13 @@
 - [x] P-4: Species 정책 결정 — `DOG`, `CAT` 모두 공식 지원으로 결정 (2026-05-31 고양이 추가)
 - [ ] P-5: 프로필 API/클라이언트 QA
   - 요청/응답, 저장/수정, 기존 데이터 호환성 확인
+- [x] P-6: 체중 모름 필드 추가 (2026-06-12)
+  - `weightKgUnknown` 필드 추가 (boolean, NOT NULL, default false)
+  - true이면 `weightKg` null 허용
+  - 운영 DB 적용 완료: `pet-weight-kg-unknown-migration.sql`
+- [x] P-7: 반려동물 최대 3마리 제한 (2026-06-05)
+  - `MAX_PETS_PER_USER=3` (`PetService`)
+  - 초과 등록 시도 시 `PET_003`(400) 반환
 
 ## 설정/프로필 UX 정리
 
@@ -291,13 +317,18 @@
 - [x] JWT 인증 골격 및 refresh 재발급 API 구현 완료
 - [x] 로그아웃 API와 refreshToken 해시 폐기 구현
 - [x] 회원 탈퇴 API 서버 구현 완료 (D-13)
-- [ ] **회원 탈퇴 DB 마이그레이션 (D-18)** — 배포 전 필수
+- [x] **회원 탈퇴 DB 마이그레이션 (D-18)** — 앱 출시 전 적용 완료
 - [x] **`SPRING_PROFILES_ACTIVE=prod` docker-compose에 설정 완료** (2026-05-31 QA)
 - [x] 회원 탈퇴 클라이언트 UI (D-15)
 - [x] Kakao unlink 실제 구현 (D-16)
 - [x] Google revoke 구조 구현 (D-16)
 - [x] UserOAuthToken AES-256-GCM 암호화 저장 (D-17)
 - [x] Google 로그인 Web/iOS 분리 지원 (D-20)
+- [x] 카카오 로그인 redirect 정적 페이지 (D-21)
+- [x] 반려동물 최대 3마리 제한 (P-7)
+- [x] 프로필 체중 모름 필드 추가 (P-6)
+- [x] 기록탭 사진 저장 시점 변경 (E-14)
+- [x] **앱 출시 완료 (G-1, 2026-07-08)**
 - [ ] Google revoke 실기기 QA (D-19)
 - [ ] 8080 외부 포트 닫기 확인
 - [ ] 운영 OAuth/JWT 환경변수 반영 확인 (`GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`, `OAUTH_TOKEN_ENCRYPTION_KEY` 포함)
@@ -306,10 +337,7 @@
 
 ## 다음 작업 후보
 
-1. **[배포 전 필수]** 운영 DB 마이그레이션 (D-18) — 아래 3개 스크립트 모두 운영 DB 수동 실행
-   - `user-withdrawal-migration.sql`
-   - `user_oauth_token` DDL 수동 실행 여부 확인
-   - `daily-log-note-fields-migration.sql` (고양이 추가 확장 필드)
+1. 출시 초기 크래시/에러 로그 모니터링 (`logs/error.log`, requestId 기반 추적)
 2. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
 3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
 4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리

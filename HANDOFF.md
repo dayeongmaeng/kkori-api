@@ -3,7 +3,16 @@
 세션 종료 또는 컨텍스트 전환 시 다음 세션에서 바로 이어받기 위한 최신 상태 기록.
 
 기준 문서: `apiserver.md`
-마지막 업데이트: 2026-06-02
+마지막 업데이트: 2026-07-13
+
+## 출시 상태
+
+- 앱 출시일: 2026-07-08
+- 배포 전 필수였던 운영 DB 마이그레이션 4건 모두 적용 완료:
+  - `user-withdrawal-migration.sql`
+  - `pet-weight-kg-unknown-migration.sql`
+  - `user_oauth_token` 테이블 DDL
+  - `daily-log-note-fields-migration.sql`
 
 ## 현재 운영 상태
 
@@ -36,12 +45,17 @@
 - Phase A: 로컬 API 구축 완료
 - Phase B: React Native 클라이언트 연동 완료
 - Phase C: Lightsail 배포 + 도메인 + HTTPS 적용 완료
-- Phase D: OAuth/JWT 인증 1차 구현 완료 + 운영/QA 진행
-- Phase D+: 회원 탈퇴 API 서버 구현 완료 + 클라이언트 UI 연동 완료 (DB 마이그레이션 운영 적용 대기)
+- Phase D: OAuth/JWT 인증 구현 완료 + 실제 운영 배포 완료
+- Phase D+: 회원 탈퇴 API 서버 구현 완료 + 클라이언트 UI 연동 완료 (DB 마이그레이션 운영 적용 완료)
+- Phase D+: 반려동물 최대 3마리 제한 적용 완료 (2026-06-05)
+- Phase D+: 프로필 체중 모름 필드 추가 완료 (2026-06-12)
+- Phase D+: 카카오 로그인 redirect 정적 페이지 적용 완료 (2026-06-18)
 - Phase E: S3 사진 업로드 및 후속 UX 안정화 완료
+- Phase E+: 기록탭 사진 저장 시점 변경 - 기록 등록 + 사진 업로드 한 번에 처리 API 추가 완료 (2026-07-07)
 - Phase C+: requestId 기반 로그 정책 적용 완료 (2026-05-27)
 - Phase C+: 8080 외부 노출 차단 (127.0.0.1 바인딩), prod 프로파일 docker-compose 설정 완료 (2026-05-31)
 - Phase D+ (고양이): DailyLog 확장 필드 추가 + UrineAmount enum + migration SQL (2026-05-31)
+- Phase G: 앱 출시 완료 (2026-07-08)
 - Phase F: AI 리포트 미진행
 
 ## 로그 정책 (2026-05-27 적용)
@@ -78,6 +92,10 @@
 - Spring Security 도입 + CorsConfigurationSource 기반 CORS 일원화
 - OPTIONS preflight 허용, 401 응답에도 CORS 헤더 유지
 - **회원 탈퇴 API** (`DELETE /api/v1/users/me`): 개인정보 익명화 + WITHDRAWN 처리 + 소유 Pet cascade soft delete + S3 이미지 비동기 삭제 + OAuth 연결 해제 실제 구현
+- **반려동물 최대 3마리 제한**: 사용자(또는 디바이스)당 최대 3마리까지 등록 가능. `MAX_PETS_PER_USER=3`, 초과 시 `PET_003`(400) (`PetService`, 2026-06-05)
+- **프로필 체중 모름**: `weightKgUnknown` 필드 추가. true이면 `weightKg` null 허용 (2026-06-12)
+- **카카오 로그인 redirect 정적 페이지**: `/oauth/kakao` → `static/oauth/kakao.html` forward → `kkori://oauth/kakao` 딥링크 포워딩. JWT 필터 제외 대상 (2026-06-18)
+- **기록탭 사진 저장 시점 변경**: `POST /api/v1/daily-logs/with-photos` 추가 — 기록 등록과 사진 업로드를 한 트랜잭션에서 한 번에 처리 (2026-07-07)
 - **Kakao unlink**: Admin Key 기반 HTTP 호출 구현 완료
 - **Google revoke**: `UserOAuthToken` 기반 revoke 구조 구현 완료
 - **UserOAuthToken**: Google OAuth token AES-256-GCM 암호화 저장 (`user_oauth_token` 테이블). UNIQUE(user_id, provider). 필드: `encrypted_access_token`, `encrypted_refresh_token`, `access_token_expires_at`, `scope`, `revoked_at`. revoke 성공 시 `revokedAt` 기록
@@ -142,10 +160,10 @@
 - AFTER_COMMIT 비동기. 실패해도 탈퇴 결과에 영향 없음
 - 실패 로그: `OAuthDisconnectListener`에서 기록
 
-### 배포 전 필수 DB 마이그레이션
+### 배포 전 필수 DB 마이그레이션 (적용 완료)
 
 `ddl-auto: update` 는 기존 컬럼 NOT NULL 제약을 자동 제거하지 않는다.
-탈퇴 API 활성화 전 운영 DB에 수동 실행 필요.
+앱 출시(2026-07-08) 전 운영 DB에 적용 완료됨.
 
 스크립트 위치: `src/main/resources/db/user-withdrawal-migration.sql`
 
@@ -159,7 +177,7 @@ UPDATE users SET status = 'ACTIVE' WHERE status IS NULL;
 ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 ```
 
-이 마이그레이션 없이 탈퇴 API를 호출하면 DB constraint violation(500)이 발생한다.
+(이 마이그레이션 없이 탈퇴 API를 호출하면 DB constraint violation(500)이 발생했을 것이나, 출시 전 적용 완료되어 현재는 해당 없음.)
 
 ### 클라이언트 회원 탈퇴 UI 구현 가이드
 
@@ -211,12 +229,15 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
   - `birthDateUnknown`
   - `adoptionDate`
   - `weightKg`
+  - `weightKgUnknown`
   - `neutered`
   - `medicalNotes`
   - `photoBase64`
 - `birthDateUnknown=false`이면 `birthDate` 필수 검증 있음
+- `weightKgUnknown=false`이면 `weightKg` 필수 검증 있음. `weightKgUnknown=true`이면 서비스에서 `weightKg`를 null로 세팅 (2026-06-12)
 - `breed`는 서버 enum/목록으로 관리하지 않고 string 저장만 담당
 - `Species`: `DOG`, `CAT` 모두 공식 지원 (2026-05-31 고양이 추가)
+- 사용자(또는 디바이스)당 최대 3마리까지 등록 가능. 초과 시 `PET_003`(400) (`MAX_PETS_PER_USER=3`, `PetService`, 2026-06-05)
 
 ## 사진 기능 상태
 
@@ -250,12 +271,14 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 - `GET /api/v1/photos/{externalId}/share`
 - `/api/v1/logs`
 - `/api/v1/daily-logs`
+- `POST /api/v1/daily-logs/with-photos` — 일일 기록 등록 + 사진 업로드 한 번에 처리 (multipart, 2026-07-07)
 - `POST /api/v1/daily-logs/{externalId}/photos/upload`
 - `DELETE /api/v1/daily-logs/{externalId}/photos/{photoExternalId}`
 - `POST /api/v1/auth/oauth/login`
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
-- `DELETE /api/v1/users/me` ← 회원 탈퇴 (신규)
+- `DELETE /api/v1/users/me` — 회원 탈퇴
+- `GET /oauth/kakao` — 카카오 redirect 정적 페이지 (`kkori://oauth/kakao` 딥링크 포워딩)
 
 ## S3 업로드 문제 해결 기록
 
@@ -278,8 +301,8 @@ AWS_S3_BUCKET=버킷명만
 - `docker-compose.yml`은 현재 `AWS_REGION`을 전달한다.
 - `AWS_REGION` / `AWS_S3_REGION` 표기를 정리해야 한다.
 - ~~multipart 설정~~: `spring.servlet.multipart`로 이동 완료 (2026-05-31 QA).
-- `GOOGLE_CLIENT_ID` 단일 키 대신 `GOOGLE_WEB_CLIENT_ID` + `GOOGLE_IOS_CLIENT_ID`로 분리됨. 운영 환경변수 갱신 필요.
-- `OAUTH_TOKEN_ENCRYPTION_KEY` 신규 환경변수 추가 필요. AES-256-GCM 암호화 키.
+- `GOOGLE_CLIENT_ID` 단일 키 대신 `GOOGLE_WEB_CLIENT_ID` + `GOOGLE_IOS_CLIENT_ID`로 분리됨. 운영 환경변수 갱신 완료.
+- `OAUTH_TOKEN_ENCRYPTION_KEY` 신규 환경변수. AES-256-GCM 암호화 키. 운영 적용 완료.
 
 ## 테스트 상태
 
@@ -290,13 +313,15 @@ AWS_S3_BUCKET=버킷명만
   - JWT filter
   - PetService
   - DailyPhotoService/DTO
-- 2026-05-22 기준 `./gradlew test`
-  - 26 tests completed
-  - 1 failed
+- 2026-07-13 기준 `./gradlew test`
+  - 27 tests completed
+  - 2 failed
 - 실패:
   - `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-  - 테스트용 `new ObjectMapper()`가 `ApiResponse.timestamp(LocalDateTime)` 직렬화 모듈을 못 찾아 실패
-  - 운영 ObjectMapper 문제라기보다 테스트 구성 문제에 가까움
+    - 테스트용 `new ObjectMapper()`가 `ApiResponse.timestamp(LocalDateTime)` 직렬화 모듈을 못 찾아 실패
+    - 운영 ObjectMapper 문제라기보다 테스트 구성 문제에 가까움
+  - `KkoriApiApplicationTests.contextLoads()`
+    - 로컬 DB 미기동 상태에서 실행해 발생한 연결 실패. 코드 결함 아님.
 - 회원 탈퇴 관련 자동 테스트 미작성 (추후 추가 필요)
 
 ## 클라이언트/공유 UI 메모
@@ -339,10 +364,7 @@ npx expo start -c
 
 ## 다음 작업 후보
 
-1. **[배포 전 필수]** 운영 DB 마이그레이션 — 아래 3개 스크립트 모두 운영 DB 수동 실행
-   - `user-withdrawal-migration.sql`
-   - `user_oauth_token` 테이블 DDL 수동 실행 여부 확인
-   - `daily-log-note-fields-migration.sql` (DailyLog 확장 필드)
+1. 출시 초기 크래시/에러 로그 모니터링 (`logs/error.log`, requestId 기반 추적)
 2. 반려동물 삭제 API 클라이언트 연동 — `DELETE /api/v1/pets/{externalId}` 호출 + 로컬 캐시 정리 + AppHeader 목록 갱신
 3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
 4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
@@ -360,9 +382,10 @@ npx expo start -c
 - `JWT_SECRET`도 민감정보이므로 문서와 Git에 실제 값을 기록하지 않는다.
 - local/dev/prod 모두 `JWT_SECRET=<32자 이상 랜덤 문자열>`이 필요하다.
 - Spring Boot 8080은 외부 공개 대상이 아니다. Nginx 내부 프록시 포트로만 사용한다.
-- **회원 탈퇴 API 활성화 전 DB 마이그레이션 선행 필수** — 없으면 탈퇴 시 500 오류 발생.
+- 회원 탈퇴 관련 DB 마이그레이션은 앱 출시 전 운영 DB에 적용 완료.
 - `docker-compose.yml`에 `SPRING_PROFILES_ACTIVE: prod` 설정 완료 (2026-05-31). Swagger UI는 prod에서 비활성화됨.
-- `daily-log-note-fields-migration.sql` 운영 DB 수동 실행 필요 (고양이 추가 확장 필드).
+- `daily-log-note-fields-migration.sql` 운영 DB 적용 완료 (고양이 추가 확장 필드).
+- 앱은 2026-07-08 출시되어 실사용자 트래픽이 발생 중이다. 스키마/정책 변경 시 운영 데이터 영향을 우선 고려한다.
 
 ## 작업 스타일 / 프롬프트 작성 규칙
 

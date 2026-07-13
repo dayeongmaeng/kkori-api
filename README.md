@@ -2,6 +2,8 @@
 
 반려동물 일상 기록 앱 [꼬리](https://kkori.co.kr)의 백엔드 서버.
 
+2026-07-08 출시.
+
 ## 스택
 
 - Java 21 / Spring Boot 3.5.14
@@ -81,10 +83,13 @@ docker compose logs -f api
 | `POST` | `/api/v1/photos/{externalId}/upload` | 사진 S3 업로드 |
 | `GET` | `/api/v1/photos/{externalId}/share` | 공유 조회 (인증 불필요) |
 | `GET/POST/PATCH/DELETE` | `/api/v1/daily-logs` | 일일 건강 기록 |
+| `POST` | `/api/v1/daily-logs/with-photos` | 일일 기록 등록 + 사진 업로드 한 번에 처리 |
 | `POST` | `/api/v1/daily-logs/{externalId}/photos/upload` | 기록 사진 업로드 |
 | `DELETE` | `/api/v1/daily-logs/{externalId}/photos/{photoExternalId}` | 기록 사진 삭제 |
 
 API 문서: `/swagger-ui.html`
+
+- 반려동물은 사용자(또는 디바이스)당 최대 3마리까지 등록 가능 (`PET_003`)
 
 ## 로그
 
@@ -111,7 +116,7 @@ API 문서: `/swagger-ui.html`
 - 개인정보 익명화 (email, provider 등 null 처리)
 - 탈퇴 후 동일 Google/Kakao 계정으로 재가입 가능
 
-> **배포 전 필수**: `src/main/resources/db/user-withdrawal-migration.sql`을 운영 DB에 수동 실행해야 합니다. (`ddl-auto=update`는 NOT NULL 제약 자동 제거 불가)
+> `src/main/resources/db/user-withdrawal-migration.sql`은 운영 DB에 적용 완료된 상태입니다. (`ddl-auto=update`는 NOT NULL 제약 자동 제거 불가)
 
 ## 관련 저장소
 

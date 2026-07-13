@@ -3,7 +3,16 @@
 반려동물 일상 기록 앱 "꼬리"의 백엔드 서버.
 
 기준 문서: `apiserver.md`
-마지막 갱신: 2026-06-02
+마지막 갱신: 2026-07-13
+
+## 출시 상태
+
+- 앱 출시일: 2026-07-08
+- 배포 전 필수였던 운영 DB 마이그레이션 4건 모두 적용 완료:
+  - `user-withdrawal-migration.sql`
+  - `pet-weight-kg-unknown-migration.sql`
+  - `user-oauth-token-migration.sql`
+  - `daily-log-note-fields-migration.sql`
 
 ## 프로젝트 컨텍스트
 
@@ -61,10 +70,15 @@
 - Phase A: 로컬 API 구축 완료
 - Phase B: React Native 클라이언트 연동 완료
 - Phase C: Lightsail 배포 + 도메인 + HTTPS 적용 완료
-- Phase D: OAuth/JWT 인증 1차 구현 완료 + 운영/QA 진행
+- Phase D: OAuth/JWT 인증 구현 완료 + 실제 운영 배포 완료
 - Phase D+: 회원 탈퇴 API 서버 구현 완료 + 클라이언트 UI 연동 완료
+- Phase D+: 반려동물 최대 3마리 제한 적용 완료 (2026-06-05)
+- Phase D+: 프로필 체중 모름 필드 추가 완료 (2026-06-12)
+- Phase D+: 카카오 로그인 redirect 정적 페이지 적용 완료 (2026-06-18)
 - Phase E: S3 사진 업로드 및 후속 UX 안정화 완료
+- Phase E+: 기록탭 사진 저장 시점 변경 - 기록 등록과 사진 업로드를 한 번에 처리하는 API 추가 완료 (2026-07-07)
 - Phase C+: requestId 기반 로그 정책 적용 완료 (2026-05-27)
+- Phase G: 앱 출시 완료 (2026-07-08)
 - Phase F: AI 리포트 미진행
 
 ## 인증 상태
@@ -80,6 +94,7 @@
   - iOS: native OAuth 흐름, idToken 기반 로그인, iOS OAuth Client ID 사용
 - Kakao는 accessToken으로 `https://kapi.kakao.com/v2/user/me`를 호출한다.
 - Kakao authorization code 교환 흐름도 구현되어 있다.
+- Kakao authorization code redirect는 정적 페이지 `/oauth/kakao` (`static/oauth/kakao.html`)를 거쳐 `kkori://oauth/kakao` 딥링크로 포워딩한다. 이 경로는 JWT 인증 필터 제외 대상이다. (2026-06-18)
 - JWT access/refresh 발급, accessToken 필터, refresh API가 구현되어 있다.
 - 로그아웃 API: `POST /api/v1/auth/logout`
 - 로그아웃 시 refreshToken 해시를 `revoked_refresh_token`에 저장하고, Kakao provider logout을 일부 지원한다.
@@ -107,7 +122,8 @@
 - **Caregiver**: 보호자 (가족 공유 대비, 한 Device에 여러 Caregiver 가능). soft delete 적용.
 - **Pet**: 반려동물. `userId` nullable + 기존 `deviceId` fallback. soft delete 적용.
   - `weightKgUnknown` 필드: boolean, NOT NULL, default false. true이면 `weightKg` null 허용.
-  - 운영 DB 적용 필수: `pet-weight-kg-unknown-migration.sql`
+  - 운영 DB 적용 완료: `pet-weight-kg-unknown-migration.sql`
+  - 사용자(또는 디바이스)당 최대 3마리까지 등록 가능. 초과 시 `PET_003`(400). `MAX_PETS_PER_USER=3` (`PetService`, 2026-06-05)
 - **DailyPhoto**: 하루 한 장 데일리 포토 (`petId + date` unique), caption, mediumUrl, thumbnailUrl. soft delete 적용.
 - **DailyLog**: 일일 건강 기록. soft delete 적용.
   - 기본 필드: `meal`, `water`, `walkMinutes`, `pooCondition`, `urineColor`, `urineAmount`, `condition`, `weightKg`, `memo`
@@ -162,6 +178,7 @@
 - `GET /api/v1/photos/{externalId}/share`
 - `/api/v1/logs`
 - `/api/v1/daily-logs`
+- `POST /api/v1/daily-logs/with-photos` — 일일 기록 등록 + 사진 업로드를 한 번에 처리 (multipart, 2026-07-07)
 - `POST /api/v1/daily-logs/{externalId}/photos/upload`
 - `DELETE /api/v1/daily-logs/{externalId}/photos/{photoExternalId}`
 - `POST /api/v1/auth/oauth/login`
@@ -223,13 +240,15 @@ dto
   - JWT filter
   - PetService
   - DailyPhotoService/DTO
-- 2026-05-22 기준 `java -jar gradle\wrapper\gradle-wrapper.jar test` 결과:
-  - 26 tests completed
-  - 1 failed
+- 2026-07-13 기준 `./gradlew test` 결과:
+  - 27 tests completed
+  - 2 failed
 - 실패 테스트:
   - `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-  - 테스트용 `new ObjectMapper()`가 `ApiResponse.timestamp(LocalDateTime)` 직렬화 모듈을 못 찾아 실패
-  - 운영 ObjectMapper 문제라기보다 테스트 구성 문제에 가까움
+    - 테스트용 `new ObjectMapper()`가 `ApiResponse.timestamp(LocalDateTime)` 직렬화 모듈을 못 찾아 실패
+    - 운영 ObjectMapper 문제라기보다 테스트 구성 문제에 가까움
+  - `KkoriApiApplicationTests.contextLoads()`
+    - 로컬 DB 미기동 상태에서 실행해 발생한 연결 실패. `docker compose up -d db` 후 재실행하면 통과 예상. 코드 결함 아님.
 
 ## 코딩 규칙
 
@@ -287,6 +306,7 @@ dto
 - OPTIONS preflight 요청은 Spring Security 필터 체인에서 허용한다.
 - 401 응답에도 CORS 헤더가 포함된다 (Spring Security 설정에서 처리).
 - 개발: `http://localhost:8081`(웹) ↔ `http://localhost:8080`(API) CORS 허용.
+- 허용 origin: `http://localhost:8081`, `http://localhost:19006`, `http://localhost:3000`. Vercel 프리뷰 도메인은 허용 목록에서 제외됨 (2026-06-18).
 
 ## 로그 정책
 
@@ -349,10 +369,10 @@ npx expo start -c
 
 ## 회원 탈퇴 운영 정책
 
-### 배포 전 필수 DB 마이그레이션
+### 배포 전 필수 DB 마이그레이션 (적용 완료)
 
 `ddl-auto: update`는 기존 컬럼의 NOT NULL 제약을 자동 제거하지 않는다.
-탈퇴 API 활성화 전 반드시 아래 SQL을 운영 DB에 수동 실행해야 한다.
+앱 출시(2026-07-08) 전 아래 SQL을 운영 DB에 적용 완료했다.
 스크립트: `src/main/resources/db/user-withdrawal-migration.sql`
 
 ```sql
@@ -361,8 +381,6 @@ ALTER TABLE users ALTER COLUMN provider_user_id DROP NOT NULL;
 UPDATE users SET status = 'ACTIVE' WHERE status IS NULL;
 ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 ```
-
-이 마이그레이션 없이 탈퇴 API를 호출하면 `provider=null` 저장 시 DB constraint violation이 발생한다.
 
 ### 인증 토큰 처리 정책
 
@@ -397,14 +415,11 @@ ALTER TABLE users ALTER COLUMN status SET NOT NULL;
 
 ## 다음 작업 후보
 
-1. **[배포 전 필수]** 회원 탈퇴 DB 마이그레이션 — `user-withdrawal-migration.sql` 운영 DB 수동 실행
-2. **[배포 전 필수]** Pet 체중 미상 마이그레이션 — `pet-weight-kg-unknown-migration.sql` 운영 DB 수동 실행
-3. **[배포 전 필수]** `user_oauth_token` 테이블 운영 DB 마이그레이션 — `ddl-auto: update`로 자동 생성되지 않을 경우 수동 DDL 실행 필요
-4. **[배포 전 필수]** DailyLog 확장 필드 운영 DB 마이그레이션 — `daily-log-note-fields-migration.sql` 운영 DB 수동 실행
-5. 반려동물 삭제 버튼 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
-6. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
-7. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
-8. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
-9. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
-10. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
-11. Phase F AI 리포트 설계
+1. 출시 초기 크래시/에러 로그 모니터링 (`logs/error.log`, requestId 기반 추적)
+2. 반려동물 삭제 버튼 API 연동 (프로필 탭 → `DELETE /api/v1/pets/{externalId}` + 로컬 캐시 정리 + AppHeader 목록 갱신)
+3. 실패 테스트 수정: `JwtAuthenticationFilterTest.invalidTokenReturns401()`
+4. `AWS_REGION` / `AWS_S3_REGION` 표기 정리
+5. 실제 Google/Kakao OAuth 실기기 로그인 QA (Kakao unlink, Google revoke 포함)
+6. Google revoke 실기기 QA (UserOAuthToken 저장 → 탈퇴 → revoke 호출 확인)
+7. Vercel에 `kkori.co.kr` / `www.kkori.co.kr` 연결 및 정책/계정삭제 안내 페이지 배포
+8. Phase F AI 리포트 설계
