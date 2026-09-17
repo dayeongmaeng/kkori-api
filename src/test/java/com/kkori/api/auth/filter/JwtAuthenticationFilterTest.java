@@ -17,7 +17,10 @@ import static org.mockito.Mockito.*;
 class JwtAuthenticationFilterTest {
 
     private final JwtTokenVerifier verifier = mock(JwtTokenVerifier.class);
-    private final JwtAuthenticationFilter filter = new JwtAuthenticationFilter(verifier, new ObjectMapper());
+    // 프로덕션에서는 Spring Boot가 JavaTimeModule이 등록된 ObjectMapper 빈을 주입하지만,
+    // 여기서는 직접 생성하므로 ApiResponse.timestamp(LocalDateTime) 직렬화를 위해 명시적으로 등록해야 한다.
+    private final JwtAuthenticationFilter filter =
+            new JwtAuthenticationFilter(verifier, new ObjectMapper().findAndRegisterModules());
 
     @Test
     void validAccessTokenSetsAuthContextAndRequestAttributes() throws Exception {
@@ -25,7 +28,7 @@ class JwtAuthenticationFilterTest {
         request.addHeader("Authorization", "Bearer access-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
         when(verifier.verifyAccessToken("access-token"))
-                .thenReturn(new JwtClaims(1L, "user-1", JwtTokenType.ACCESS));
+                .thenReturn(new JwtClaims(1L, "user-1", JwtTokenType.ACCESS, java.time.Instant.now()));
 
         filter.doFilter(request, response, (req, res) -> {
             assertThat(AuthContext.currentUser()).isPresent();

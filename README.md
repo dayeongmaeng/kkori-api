@@ -39,6 +39,7 @@ cp .env.example .env
 | `GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS 클라이언트 ID |
 | `KAKAO_REST_API_KEY` / `KAKAO_NATIVE_APP_KEY` | Kakao OAuth 키 |
 | `OAUTH_TOKEN_ENCRYPTION_KEY` | Google OAuth 토큰 AES-256-GCM 암호화 키 |
+| `ADMIN_API_KEY` | kkutudio-admin이 `/internal/admin/**` 호출 시 쓰는 키. `openssl rand -hex 32`로 생성 권장 |
 
 ### Docker Compose로 실행
 
@@ -67,6 +68,20 @@ docker compose logs -f api
 | 서버 | AWS Lightsail Seoul Zone A (`ap-northeast-2a`) |
 | OS | Ubuntu 24.04 LTS |
 | 인프라 흐름 | 앱 → Nginx 443 → Spring Boot 8080 → PostgreSQL 16 → S3 |
+
+## 관리자(admin) 연동
+
+kkutudio-admin(별도 저장소)이 서버 대 서버로 호출하는 내부 전용 API. 최종 사용자에게는 노출되지 않는다.
+
+| 항목 | 값 |
+|---|---|
+| 경로 | `/internal/admin/**` |
+| 인증 | `X-Admin-Api-Key` 헤더 (`ADMIN_API_KEY` 환경변수와 비교) — 최종 사용자용 JWT와는 별개 |
+| 응답 포맷 | 공개 API의 `ApiResponse<T>` 래핑을 쓰지 않는 평문 JSON |
+
+운영 도메인(`api.kkori.co.kr`)이 공개 도메인이라 `/internal/admin/**`도 인터넷에서 경로 자체는 닿는다. API 키만으로 방어하므로:
+- `ADMIN_API_KEY`는 `openssl rand -hex 32`처럼 충분히 긴 무작위 값을 쓴다.
+- 가능하면 Nginx에서 kkutudio-admin이 나가는 고정 IP만 `/internal/admin/`에 허용하는 `allow`/`deny` 규칙을 추가로 둔다 (선택, 아직 적용 안 함).
 
 ## 주요 API
 

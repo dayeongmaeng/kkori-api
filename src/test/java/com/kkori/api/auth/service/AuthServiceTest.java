@@ -38,6 +38,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -166,7 +167,7 @@ class AuthServiceTest {
         User user = user(1L, OAuthProvider.GOOGLE, "google-1");
         when(revokedRefreshTokenRepository.existsByTokenHash(anyString())).thenReturn(false);
         when(jwtTokenVerifier.verifyRefreshToken("refresh-token"))
-                .thenReturn(new JwtClaims(1L, "user-1", JwtTokenType.REFRESH));
+                .thenReturn(new JwtClaims(1L, "user-1", JwtTokenType.REFRESH, Instant.now()));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(jwtTokenIssuer.issueAccessToken(user)).thenReturn("new-access");
 
@@ -192,7 +193,7 @@ class AuthServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(jwtTokenVerifier.verifyRefreshToken("refresh-token"))
-                .thenReturn(new JwtClaims(1L, "user-1", JwtTokenType.REFRESH));
+                .thenReturn(new JwtClaims(1L, "user-1", JwtTokenType.REFRESH, Instant.now()));
         when(revokedRefreshTokenRepository.existsByTokenHash(anyString())).thenReturn(false);
         when(providerLogoutClient.supports(OAuthProvider.KAKAO)).thenReturn(true);
         when(providerLogoutClient.logout("kakao-access-token")).thenReturn(true);

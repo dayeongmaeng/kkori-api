@@ -59,7 +59,8 @@ public class JwtTokenVerifier {
         return new JwtClaims(
                 longClaim(payload, "uid"),
                 stringClaim(payload, "sub"),
-                expectedType
+                expectedType,
+                Instant.ofEpochSecond(longClaim(payload, "iat"))
         );
     }
 

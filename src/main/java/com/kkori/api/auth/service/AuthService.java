@@ -90,7 +90,10 @@ public class AuthService {
         User user = userRepository.findById(claims.userId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_001));
 
-        if (user.isDeleted() || user.isWithdrawn()) {
+        if (user.isDeleted() || user.isWithdrawn() || user.isSuspended()) {
+            throw new BusinessException(ErrorCode.AUTH_003);
+        }
+        if (user.isSessionInvalidatedAfter(claims.issuedAt())) {
             throw new BusinessException(ErrorCode.AUTH_003);
         }
 

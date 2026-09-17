@@ -36,6 +36,7 @@ src/main/java/com/kkori/api/
 ├── pet/        반려동물과 삭제 cascade
 ├── photo/      하루 한 장 사진과 S3 저장소
 ├── log/        일일 건강 기록과 첨부 사진
+├── admin/      kkutudio-admin 전용 내부 API (/internal/admin/**, API 키 인증)
 └── common/     설정, 공통 응답, 예외, 필터, 인터셉터
 
 src/main/resources/
@@ -88,6 +89,7 @@ docker compose logs -f api
 | Google | `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID` |
 | Kakao | `KAKAO_REST_API_KEY`, `KAKAO_ADMIN_KEY` |
 | OAuth 토큰 암호화 | `OAUTH_TOKEN_ENCRYPTION_KEY`(최소 32바이트) |
+| Admin 연동 | `ADMIN_API_KEY` — kkutudio-admin이 `/internal/admin/**` 호출 시 `X-Admin-Api-Key` 헤더로 보내는 값과 비교. 비어 있으면 해당 경로는 전부 401 |
 
 - 기본 JWT TTL은 access 1시간, refresh 30일이다.
 - Google audience 검증은 현재 Web/iOS client ID만 허용한다. Android client ID 지원을 가정하지 않는다.
@@ -183,6 +185,8 @@ DB 트랜잭션과 외부 I/O를 구분한다.
 | DailyLog | `/api/v1/logs`와 `/api/v1/daily-logs` 모두 동일하게 지원 |
 | Log 상세 | `POST/GET` base, `GET/PUT/DELETE /{externalId}` |
 | Log 사진 | `POST /with-photos`, `POST /{externalId}/photos/upload`, `DELETE /{externalId}/photos/{photoExternalId}` |
+
+`/internal/admin/**`(kkutudio-admin 전용, `X-Admin-Api-Key` 인증)는 이 표에서 제외 — `ApiResponse<T>`를 쓰지 않는 별도 계약이다. 자세한 내용은 "5. 설정과 환경변수"의 `ADMIN_API_KEY`와 `admin/` 패키지 참고.
 
 Photo/Log 목록은 `petExternalId` query parameter를 요구한다. API 계약을 바꾸면 두 alias, Swagger annotation, 클라이언트, DTO, 오류 코드, 테스트를 함께 확인한다.
 
