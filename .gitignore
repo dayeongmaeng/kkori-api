@@ -39,3 +39,6 @@ out/
 
 ### Env ###
 .env
+
+### Local-only compose overrides ###
+docker-compose.override.yml

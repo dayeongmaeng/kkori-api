@@ -39,17 +39,6 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    # kkutudio-admin(admin-api)이 /internal/admin/**을 호출할 수 있도록 공유 네트워크에도 연결한다.
-    # base_url(http://kkori-api:8080/internal/admin)과 맞추기 위해 별칭을 kkori-api로 둔다.
-    networks:
-      default:
-      kkori-shared:
-        aliases:
-          - kkori-api
 
 volumes:
   postgres_data:
-
-networks:
-  kkori-shared:
-    external: true
