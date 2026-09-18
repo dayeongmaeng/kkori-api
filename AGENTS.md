@@ -190,6 +190,22 @@ DB 트랜잭션과 외부 I/O를 구분한다.
 
 Photo/Log 목록은 `petExternalId` query parameter를 요구한다. API 계약을 바꾸면 두 alias, Swagger annotation, 클라이언트, DTO, 오류 코드, 테스트를 함께 확인한다.
 
+### 10-1. 관리자 대시보드(통계) API
+
+`/internal/admin/dashboard/{overview|members|pets|records|conversion}` — `GET`, 공통 파라미터 `from`(date), `to`(date), `unit`(`DAY`\|`WEEK`\|`MONTH`). 회원 admin API와 마찬가지로 Admin DB(kkutudio-admin)에는 아무것도 저장하지 않고 매 요청마다 이 서버가 실시간 집계해서 응답한다(`admin.service.AdminDashboardService`). 응답 DTO는 `admin.dto.response.dashboard.*`.
+
+지표 정의(구현은 `admin.support.KstClock`/`DashboardBuckets`/`RecordsMetricsCalculator`/`RetentionCalculator` 참고):
+
+- **시간대**: 모든 "날짜" 판정은 KST 기준. `created_at`은 DB에 `timestamp without time zone`으로 UTC wall-clock으로 저장된다고 **추정**한다 — postgres/api 컨테이너 어디에도 `TZ` 설정이 없어 두 베이스 이미지(`postgres:16-alpine`, `eclipse-temurin:21-jre-alpine`) 모두 기본값인 UTC로 동작하기 때문이다(운영 서버에서 직접 검증되지는 않음, `KstClock` 클래스 주석 참고). 이 가정이 틀리면 `KstClock`만 고치면 된다.
+- **활성(활성 단위)**: 기준일(KST, `created_at` 변환)에 `daily_photo` 또는 `daily_log`를 1건 이상 작성. DAU/WAU/MAU와 "기록" 탭의 활성 추이·참여율이 이 정의를 쓴다.
+- **활성 단위**: `pet.user_id`가 있으면 회원(`user:{userId}`), 없으면 `pet.device_id`(`device:{deviceId}`) 기준. 한 회원이 여러 펫에 기록해도 1단위로만 집계한다.
+- **참여율 분모(eligible)**: 기준일에 존재한 펫(`pet.created_at`(KST) ≤ 기준일, `deleted_at` null이거나 삭제일(KST)이 기준일보다 이후) 중 비회원이거나 소유 회원이 **현재** `ACTIVE`·미삭제인 것. 회원 상태는 과거 시점을 추적하지 않으므로 현재값으로 근사한다(알려진 한계).
+- **누적·streak·기능조합**: `daily_log`/`daily_photo`의 `date` 컬럼(기록이 가리키는 논리적 날짜) 기준이며 `created_at`과 달리 KST 변환이 필요 없다. 둘 다 조회 기간(`from`~`to`) 안의 데이터만으로 계산한다 — 누적은 서비스 전체 누적이 아니라 `from` 시점을 0으로 하는 기간 내 누적이고, streak도 기간 내에서만 연속일수를 센다.
+- **리텐션**: 가입 주(KST 월요일 시작, `KstClock.mondayOfWeek`) 코호트, W1/W2/W4/W8 = 코호트 시작일 + N주 구간(7일)에 그 회원 소유 펫 중 하나라도 `date` 기준 기록이 1건 이상 있으면 리텐션. 비회원은 코호트에서 제외(가입일이 없으므로). 아직 N주가 지나지 않은 코호트는 해당 주차 값이 `null`이다(`to`를 성숙도 판단 기준일로 삼는다).
+- **소요시간(가입→첫 펫, 펫→첫 기록)**: 시간 단위, 음수(데이터 이상치)는 표본에서 제외.
+- `caregiver`는 모든 지표에서 제외한다.
+- `daily_log`/`daily_photo`는 **개별 삭제는 물리 삭제**, pet 삭제·회원 탈퇴로 인한 cascade는 soft delete다(8절 참고) — 통계에서 "삭제된 기록 수"는 cascade로 soft-delete된 것만 셀 수 있고, 개별 삭제된 행은 애초에 남아있지 않다.
+
 ## 11. OAuth와 회원 탈퇴
 
 - 로그인 구현 제공자는 Google과 Kakao다. 이메일/비밀번호 인증은 없다.
@@ -239,6 +255,7 @@ Photo/Log 목록은 `petExternalId` query parameter를 요구한다. API 계약�
 - Google Android OAuth audience 설정이 없다.
 - S3 두 파일 업로드 또는 DB 저장의 중간 실패에 대한 자동 보상 삭제가 없다.
 - `ddl-auto=update`와 수동 SQL이 함께 있어 환경별 스키마 차이가 생길 수 있다.
+- 관리자 대시보드(`admin.service.AdminDashboardService`)는 `created_at`이 UTC naive로 저장된다고 가정하고 KST로 변환한다(운영 미검증, 10-1절·`KstClock` 참고). 또한 날짜 버킷팅·streak·코호트 집계를 Postgres 네이티브 SQL이 아니라 조회 기간 범위의 엔티티를 애플리케이션 메모리에 올려 계산한다 — 데이터량이 커지면 네이티브 집계 쿼리로 전환을 검토한다.
 
 이 항목을 요청 범위 밖에서 대규모로 정리하지는 않는다. 다만 변경이 해당 위험을 악화시키지 않는지 확인하고, 직접 닿는 경우 가장 작은 안전한 수정과 테스트를 제안하거나 구현한다.
 
